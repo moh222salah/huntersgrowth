@@ -1,0 +1,1224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Growth Hunters — Complete n8n Workflow</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0c0c10;
+  --surface: #141418;
+  --border: rgba(255,255,255,0.07);
+  --green: #8BC34A;
+  --yellow: #FFD54F;
+  --cyan: #26C6DA;
+  --purple: #9C27B0;
+  --red: #EF5350;
+  --orange: #FF7043;
+  --text: #e8edf5;
+  --muted: #5a6075;
+  --secondary: #9ba3b8;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  font-family: 'DM Sans', sans-serif;
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Animated background */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 800px 600px at 15% 20%, rgba(139,195,74,0.04) 0%, transparent 70%),
+    radial-gradient(ellipse 600px 800px at 85% 80%, rgba(38,198,218,0.04) 0%, transparent 70%),
+    radial-gradient(ellipse 500px 500px at 50% 50%, rgba(156,39,176,0.03) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* HEADER */
+.header {
+  position: relative;
+  z-index: 10;
+  padding: 48px 48px 32px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.logo-area { display: flex; align-items: center; gap: 16px; }
+
+.logo-icon {
+  width: 52px; height: 52px;
+  background: linear-gradient(135deg, var(--green), var(--cyan));
+  border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px;
+  box-shadow: 0 0 30px rgba(139,195,74,0.3);
+}
+
+.logo-text h1 {
+  font-family: 'Archivo Black', sans-serif;
+  font-size: 1.6rem;
+  background: linear-gradient(135deg, var(--green), var(--yellow), var(--cyan));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -0.02em;
+}
+
+.logo-text p {
+  font-size: 0.78rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-top: 2px;
+}
+
+.header-stats {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.stat-pill {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  border-radius: 50px;
+  padding: 8px 18px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.82rem;
+}
+
+.stat-pill .dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.8); }
+}
+
+/* DOWNLOAD BANNER */
+.download-banner {
+  position: relative;
+  z-index: 10;
+  margin: 24px 48px;
+  background: linear-gradient(135deg, rgba(139,195,74,0.12), rgba(38,198,218,0.08));
+  border: 1px solid rgba(139,195,74,0.25);
+  border-radius: 16px;
+  padding: 20px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.download-banner p { font-size: 0.9rem; color: var(--secondary); }
+.download-banner strong { color: var(--green); }
+
+.btn-download {
+  background: linear-gradient(135deg, var(--green), var(--cyan));
+  color: #0c0c10;
+  border: none;
+  border-radius: 10px;
+  padding: 11px 24px;
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  white-space: nowrap;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.btn-download:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(139,195,74,0.35);
+}
+
+/* MAIN CONTENT */
+.main {
+  position: relative;
+  z-index: 10;
+  padding: 32px 48px 64px;
+}
+
+/* SECTION HEADERS */
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.section-number {
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Archivo Black', sans-serif;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+.section-title {
+  font-family: 'Archivo Black', sans-serif;
+  font-size: 1.1rem;
+  letter-spacing: -0.01em;
+}
+
+.section-subtitle {
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin-top: 1px;
+}
+
+/* PIPELINE OVERVIEW */
+.pipeline {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin-bottom: 48px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+}
+
+.pipeline-step {
+  flex: 1;
+  min-width: 150px;
+  position: relative;
+}
+
+.pipeline-step::after {
+  content: '→';
+  position: absolute;
+  right: -12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted);
+  font-size: 1.2rem;
+  z-index: 2;
+}
+
+.pipeline-step:last-child::after { display: none; }
+
+.pipeline-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  margin-right: 24px;
+  text-align: center;
+  transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.pipeline-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+}
+
+.pipeline-card:hover {
+  transform: translateY(-4px);
+}
+
+.pipeline-card .emoji { font-size: 1.8rem; margin-bottom: 6px; }
+.pipeline-card .phase-label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 4px;
+}
+.pipeline-card .phase-name {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+.pipeline-card .phase-time {
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+/* WORKFLOW GRID */
+.workflow-grid {
+  display: grid;
+  gap: 20px;
+  margin-bottom: 48px;
+}
+
+.workflow-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.workflow-section-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.workflow-section-header .icon {
+  width: 36px; height: 36px;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.workflow-section-title {
+  font-weight: 700;
+  font-size: 0.95rem;
+  flex: 1;
+}
+
+.trigger-badge {
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 4px 10px;
+  border-radius: 50px;
+  background: rgba(139,195,74,0.12);
+  color: var(--green);
+  border: 1px solid rgba(139,195,74,0.2);
+}
+
+/* NODE FLOW */
+.node-flow {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.flow-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  position: relative;
+}
+
+.flow-row:last-child { border-bottom: none; }
+
+.flow-connector {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  flex-shrink: 0;
+  padding-top: 2px;
+}
+
+.flow-dot-node {
+  width: 28px; height: 28px;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.flow-line {
+  width: 2px;
+  height: 24px;
+  background: linear-gradient(to bottom, rgba(139,195,74,0.4), transparent);
+  margin-top: 2px;
+}
+
+.flow-content { flex: 1; min-width: 0; }
+
+.flow-node-type {
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  margin-bottom: 2px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.node-type-tag {
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 0.62rem;
+}
+
+.flow-node-name {
+  font-weight: 600;
+  font-size: 0.87rem;
+  margin-bottom: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.flow-node-desc {
+  font-size: 0.78rem;
+  color: var(--secondary);
+  line-height: 1.4;
+}
+
+.flow-arrow {
+  margin: 4px 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding-right: 8px;
+}
+
+/* BRANCHES */
+.branch-container {
+  background: rgba(255,255,255,0.02);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px;
+  margin-top: 8px;
+}
+
+.branch-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.branch-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 8px;
+  margin-bottom: 6px;
+  font-size: 0.82rem;
+}
+
+.branch-item:last-child { margin-bottom: 0; }
+
+/* CODE BLOCK */
+.code-snippet {
+  background: #0a0a0d;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-top: 10px;
+  overflow-x: auto;
+}
+
+.code-snippet pre {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  line-height: 1.6;
+  color: #c5d0e6;
+}
+
+.code-keyword { color: #C792EA; }
+.code-string { color: #C3E88D; }
+.code-var { color: #82AAFF; }
+.code-comment { color: #546E7A; font-style: italic; }
+.code-number { color: #F78C6C; }
+
+/* ENV VARIABLES */
+.env-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 10px;
+  padding: 20px;
+}
+
+.env-item {
+  background: rgba(0,0,0,0.3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.env-key {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--yellow);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.env-type {
+  font-size: 0.65rem;
+  padding: 2px 7px;
+  border-radius: 50px;
+  font-weight: 600;
+}
+
+/* INTEGRATION GRID */
+.integration-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+  padding: 20px;
+}
+
+.integration-card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+  transition: transform 0.2s, border-color 0.2s;
+  cursor: default;
+}
+
+.integration-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(255,255,255,0.14);
+}
+
+.integration-card .int-icon {
+  width: 40px; height: 40px;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.2rem;
+}
+
+.integration-card .int-name {
+  font-weight: 600;
+  font-size: 0.82rem;
+}
+
+.integration-card .int-use {
+  font-size: 0.72rem;
+  color: var(--muted);
+  line-height: 1.3;
+}
+
+/* FOOTER */
+.footer {
+  position: relative;
+  z-index: 10;
+  padding: 32px 48px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.footer-brand {
+  font-family: 'Archivo Black', sans-serif;
+  font-size: 0.9rem;
+  background: linear-gradient(135deg, var(--green), var(--cyan));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.footer p { font-size: 0.78rem; color: var(--muted); margin-top: 4px; }
+
+.footer-links {
+  display: flex;
+  gap: 20px;
+}
+
+.footer-link {
+  font-size: 0.8rem;
+  color: var(--secondary);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: color 0.2s;
+}
+
+.footer-link:hover { color: var(--green); }
+
+/* UTILITIES */
+.color-green { color: var(--green); }
+.color-yellow { color: var(--yellow); }
+.color-cyan { color: var(--cyan); }
+.color-purple { color: var(--purple); }
+.color-red { color: var(--red); }
+.color-orange { color: var(--orange); }
+
+.bg-green { background: rgba(139,195,74,0.15); }
+.bg-yellow { background: rgba(255,213,79,0.15); }
+.bg-cyan { background: rgba(38,198,218,0.15); }
+.bg-purple { background: rgba(156,39,176,0.15); }
+.bg-red { background: rgba(239,83,80,0.15); }
+.bg-orange { background: rgba(255,112,67,0.15); }
+
+.border-green { border-color: rgba(139,195,74,0.3) !important; }
+.border-yellow { border-color: rgba(255,213,79,0.3) !important; }
+.border-cyan { border-color: rgba(38,198,218,0.3) !important; }
+.border-purple { border-color: rgba(156,39,176,0.3) !important; }
+
+.glow-green { box-shadow: 0 0 20px rgba(139,195,74,0.2); }
+.glow-cyan { box-shadow: 0 0 20px rgba(38,198,218,0.2); }
+
+/* responsive */
+@media (max-width: 768px) {
+  .header, .main, .footer, .download-banner { padding-left: 20px; padding-right: 20px; }
+  .pipeline { gap: 8px; }
+  .pipeline-card { margin-right: 16px; }
+  .header-stats { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="logo-area">
+    <div class="logo-icon">🎯</div>
+    <div class="logo-text">
+      <h1>Hunters Growth</h1>
+      <p>Complete n8n Workflow System · Powered by MilestoneX</p>
+    </div>
+  </div>
+  <div class="header-stats">
+    <div class="stat-pill">
+      <div class="dot" style="background:var(--green);"></div>
+      <span>28 Nodes</span>
+    </div>
+    <div class="stat-pill">
+      <div class="dot" style="background:var(--cyan);"></div>
+      <span>5 Triggers</span>
+    </div>
+    <div class="stat-pill">
+      <div class="dot" style="background:var(--yellow);"></div>
+      <span>3 AI Agents</span>
+    </div>
+    <div class="stat-pill">
+      <div class="dot" style="background:var(--purple);"></div>
+      <span>6 Phases</span>
+    </div>
+  </div>
+</header>
+
+<!-- DOWNLOAD BANNER -->
+<div class="download-banner">
+  <div>
+    <p><strong>📦 Growth Hunters Workflow v1.0</strong> — Complete n8n automation for growth agencies</p>
+    <p style="margin-top:4px;font-size:0.78rem;opacity:0.7;">Import the JSON file directly into n8n → Settings → Import Workflow</p>
+  </div>
+  <a href="growth-hunters-workflow.json" download class="btn-download">
+    ⬇ Download Workflow JSON
+  </a>
+</div>
+
+<main class="main">
+
+  <!-- PHASE PIPELINE -->
+  <div class="section-header" style="margin-bottom:20px;">
+    <div class="section-number bg-green color-green" style="background:rgba(139,195,74,0.15);">01</div>
+    <div>
+      <div class="section-title">Client Growth Pipeline</div>
+      <div class="section-subtitle">6 phases · End-to-end automation from onboarding to retention</div>
+    </div>
+  </div>
+
+  <div class="pipeline" style="margin-bottom:48px;">
+    <div class="pipeline-step">
+      <div class="pipeline-card border-green glow-green" style="border-top-color:var(--green);" onclick="">
+        <div style="position:absolute;top:0;left:0;right:0;height:3px;background:var(--green);border-radius:12px 12px 0 0;"></div>
+        <div class="emoji">🔍</div>
+        <div class="phase-label color-green">Phase 1</div>
+        <div class="phase-name">Discovery & Audit</div>
+        <div class="phase-time">Week 1 · 5-7 days</div>
+      </div>
+    </div>
+    <div class="pipeline-step">
+      <div class="pipeline-card border-yellow" style="border-top-color:var(--yellow);">
+        <div style="position:absolute;top:0;left:0;right:0;height:3px;background:var(--yellow);border-radius:12px 12px 0 0;"></div>
+        <div class="emoji">📐</div>
+        <div class="phase-label color-yellow">Phase 2</div>
+        <div class="phase-name">Strategy & Blueprint</div>
+        <div class="phase-time">Week 2-3 · 14 days</div>
+      </div>
+    </div>
+    <div class="pipeline-step">
+      <div class="pipeline-card border-cyan glow-cyan" style="border-top-color:var(--cyan);">
+        <div style="position:absolute;top:0;left:0;right:0;height:3px;background:var(--cyan);border-radius:12px 12px 0 0;"></div>
+        <div class="emoji">🚀</div>
+        <div class="phase-label color-cyan">Phase 3</div>
+        <div class="phase-name">Launch & Execute</div>
+        <div class="phase-time">Week 3-6 · 3-4 weeks</div>
+      </div>
+    </div>
+    <div class="pipeline-step">
+      <div class="pipeline-card border-green" style="border-top-color:var(--green);">
+        <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--green),var(--cyan));border-radius:12px 12px 0 0;"></div>
+        <div class="emoji">📊</div>
+        <div class="phase-label color-green">Phase 4</div>
+        <div class="phase-name">Measure & Optimize</div>
+        <div class="phase-time">Week 6-10 · 4 weeks</div>
+      </div>
+    </div>
+    <div class="pipeline-step">
+      <div class="pipeline-card border-yellow" style="border-top-color:var(--yellow);">
+        <div style="position:absolute;top:0;left:0;right:0;height:3px;background:var(--yellow);border-radius:12px 12px 0 0;"></div>
+        <div class="emoji">⚡</div>
+        <div class="phase-label color-yellow">Phase 5</div>
+        <div class="phase-name">Scale & Expand</div>
+        <div class="phase-time">Month 3-6</div>
+      </div>
+    </div>
+    <div class="pipeline-step">
+      <div class="pipeline-card border-cyan" style="border-top-color:var(--cyan);">
+        <div style="position:absolute;top:0;left:0;right:0;height:3px;background:var(--cyan);border-radius:12px 12px 0 0;"></div>
+        <div class="emoji">🔄</div>
+        <div class="phase-label color-cyan">Phase 6</div>
+        <div class="phase-name">Retain & Iterate</div>
+        <div class="phase-time">Ongoing</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WORKFLOW FLOWS -->
+  <div class="section-header">
+    <div class="section-number" style="background:rgba(38,198,218,0.15);color:var(--cyan);">02</div>
+    <div>
+      <div class="section-title">Workflow Automations</div>
+      <div class="section-subtitle">5 sub-workflows running independently · All connected to ERPNext + Slack + CRM</div>
+    </div>
+  </div>
+
+  <div class="workflow-grid" style="grid-template-columns:1fr 1fr;">
+
+    <!-- FLOW 1: Client Onboarding -->
+    <div class="workflow-section border-green" style="grid-column:1/-1;">
+      <div class="workflow-section-header">
+        <div class="icon bg-green" style="background:rgba(139,195,74,0.15);">🎯</div>
+        <div>
+          <div class="workflow-section-title">Flow 1 — Client Onboarding</div>
+          <div style="font-size:0.75rem;color:var(--muted);">Triggered when new client signs up · Creates all tasks, CRM entry, ERPNext project</div>
+        </div>
+        <span class="trigger-badge">Webhook + Manual</span>
+      </div>
+      <div class="node-flow">
+        <div class="flow-row">
+          <div class="flow-connector">
+            <div class="flow-dot-node bg-green color-green" style="background:rgba(139,195,74,0.15);">⚡</div>
+            <div class="flow-line"></div>
+          </div>
+          <div class="flow-content">
+            <div class="flow-node-type">
+              Trigger
+              <span class="node-type-tag bg-green color-green" style="background:rgba(139,195,74,0.15);">Webhook / Manual</span>
+            </div>
+            <div class="flow-node-name">📥 Client Onboarding Webhook</div>
+            <div class="flow-node-desc">Receives: client_name, client_email, industry, monthly_budget · POST /webhook/new-client</div>
+          </div>
+        </div>
+        <div class="flow-row">
+          <div class="flow-connector">
+            <div class="flow-dot-node bg-yellow color-yellow" style="background:rgba(255,213,79,0.15);">⚙️</div>
+            <div class="flow-line" style="background:linear-gradient(to bottom,rgba(255,213,79,0.4),transparent);"></div>
+          </div>
+          <div class="flow-content">
+            <div class="flow-node-type">Transform <span class="node-type-tag bg-yellow color-yellow" style="background:rgba(255,213,79,0.15);">Set Node</span></div>
+            <div class="flow-node-name">⚙️ Set Client Variables</div>
+            <div class="flow-node-desc">Generates: projectId (GH-YYYYMMDD-XXXX), startDate, phase = "Phase 1 - Discovery"</div>
+          </div>
+        </div>
+        <div style="padding:4px 0 4px 40px;">
+          <div class="branch-container">
+            <div class="branch-label">↳ Runs in parallel (3 branches)</div>
+            <div class="branch-item">
+              <span style="font-size:0.9rem;">🔗</span>
+              <div>
+                <div style="font-weight:600;font-size:0.82rem;">HubSpot CRM — Create Contact</div>
+                <div style="font-size:0.75rem;color:var(--muted);">Lifecycle: customer · Status: IN_PROGRESS</div>
+              </div>
+            </div>
+            <div class="branch-item">
+              <span style="font-size:0.9rem;">📋</span>
+              <div>
+                <div style="font-weight:600;font-size:0.82rem;">ClickUp — Phase 1 Task</div>
+                <div style="font-size:0.75rem;color:var(--muted);">Due: 7 days · Priority: High · 6 subtasks auto-generated</div>
+              </div>
+            </div>
+            <div class="branch-item">
+              <span style="font-size:0.9rem;">📋</span>
+              <div>
+                <div style="font-weight:600;font-size:0.82rem;">ClickUp — Phase 2 Task</div>
+                <div style="font-size:0.75rem;color:var(--muted);">Due: 21 days · Milestone Gate: Blueprint Sign-Off required</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="flow-row" style="margin-top:8px;">
+          <div class="flow-connector">
+            <div class="flow-dot-node" style="background:rgba(156,39,176,0.15);color:var(--purple);">📧</div>
+            <div class="flow-line" style="background:linear-gradient(to bottom,rgba(156,39,176,0.4),transparent);"></div>
+          </div>
+          <div class="flow-content">
+            <div class="flow-node-type">Communication <span class="node-type-tag" style="background:rgba(156,39,176,0.15);color:var(--purple);">Email + Slack</span></div>
+            <div class="flow-node-name">📧 Welcome Email + 💬 Slack Notification</div>
+            <div class="flow-node-desc">Branded HTML email to client · Team alert in #new-clients with Project ID and action required</div>
+          </div>
+        </div>
+        <div class="flow-row">
+          <div class="flow-connector">
+            <div class="flow-dot-node" style="background:rgba(38,198,218,0.15);color:var(--cyan);">🏢</div>
+          </div>
+          <div class="flow-content">
+            <div class="flow-node-type">ERP <span class="node-type-tag" style="background:rgba(38,198,218,0.15);color:var(--cyan);">ERPNext API</span></div>
+            <div class="flow-node-name">🏢 ERPNext — Create Project + Task</div>
+            <div class="flow-node-desc">Creates Project record with 6-month timeline · Links to first task · API token auth</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FLOW 2: Daily Monitor -->
+    <div class="workflow-section">
+      <div class="workflow-section-header">
+        <div class="icon" style="background:rgba(239,83,80,0.15);">⏰</div>
+        <div>
+          <div class="workflow-section-title">Flow 2 — Daily Task Monitor</div>
+          <div style="font-size:0.75rem;color:var(--muted);">Every 24h · Checks overdue tasks</div>
+        </div>
+        <span class="trigger-badge" style="background:rgba(239,83,80,0.12);color:var(--red);border-color:rgba(239,83,80,0.2);">Schedule · 24h</span>
+      </div>
+      <div class="node-flow">
+        <div class="flow-row">
+          <div class="flow-connector">
+            <div class="flow-dot-node" style="background:rgba(239,83,80,0.15);color:var(--red);">⏰</div>
+            <div class="flow-line" style="background:linear-gradient(to bottom,rgba(239,83,80,0.4),transparent);"></div>
+          </div>
+          <div class="flow-content">
+            <div class="flow-node-name">⏰ Daily Check Scheduler</div>
+            <div class="flow-node-desc">Runs every 24 hours automatically</div>
+          </div>
+        </div>
+        <div class="flow-row">
+          <div class="flow-connector">
+            <div class="flow-dot-node bg-yellow color-yellow" style="background:rgba(255,213,79,0.15);">📊</div>
+            <div class="flow-line" style="background:linear-gradient(to bottom,rgba(255,213,79,0.4),transparent);"></div>
+          </div>
+          <div class="flow-content">
+            <div class="flow-node-name">📊 Check Overdue Tasks in ClickUp</div>
+            <div class="flow-node-desc">Filters: status=In Progress, dueDate &lt; now+2days</div>
+          </div>
+        </div>
+        <div class="flow-row">
+          <div class="flow-connector">
+            <div class="flow-dot-node bg-cyan color-cyan" style="background:rgba(38,198,218,0.15);">🔀</div>
+          </div>
+          <div class="flow-content">
+            <div class="flow-node-name">🔀 Has Overdue Tasks? → Alert</div>
+            <div class="flow-node-desc">
+              <span class="color-red">✓ YES →</span> Slack alert to #alerts channel with task list<br>
+              <span class="color-muted">✗ NO → </span>No action, workflow ends silently
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FLOW 3: Weekly Analytics -->
+    <div class="workflow-section">
+      <div class="workflow-section-header">
+        <div class="icon" style="background:rgba(38,198,218,0.15);">📈</div>
+        <div>
+          <div class="workflow-section-title">Flow 3 — Weekly Analytics Report</div>
+          <div style="font-size:0.75rem;color:var(--muted);">Every Friday · GA4 + Meta + AI insights</div>
+        </div>
+        <span class="trigger-badge" style="background:rgba(38,198,218,0.12);color:var(--cyan);border-color:rgba(38,198,218,0.2);">Schedule · Weekly</span>
+      </div>
+      <div class="node-flow">
+        <div class="flow-row">
+          <div class="flow-connector">
+            <div class="flow-dot-node" style="background:rgba(38,198,218,0.15);color:var(--cyan);">📅</div>
+            <div class="flow-line" style="background:linear-gradient(to bottom,rgba(38,198,218,0.4),transparent);"></div>
+          </div>
+          <div class="flow-content">
+            <div class="flow-node-name">📅 Weekly Report Scheduler (Friday)</div>
+            <div class="flow-node-desc">Triggers GA4 + Meta Ads fetching in parallel</div>
+          </div>
+        </div>
+        <div class="flow-row">
+          <div class="flow-connector">
+            <div class="flow-dot-node" style="background:rgba(255,112,67,0.15);color:var(--orange);">📊</div>
+            <div class="flow-line" style="background:linear-gradient(to bottom,rgba(255,112,67,0.4),transparent);"></div>
+          </div>
+          <div class="flow-content">
+            <div class="flow-node-name">📊 GA4 + 📢 Meta Ads → Merge</div>
+            <div class="flow-node-desc">Fetches sessions, conversions, revenue, spend, ROAS, CPC · Merges by position</div>
+          </div>
+        </div>
+        <div class="flow-row">
+          <div class="flow-connector">
+            <div class="flow-dot-node bg-yellow color-yellow" style="background:rgba(255,213,79,0.15);">🧮</div>
+            <div class="flow-line" style="background:linear-gradient(to bottom,rgba(255,213,79,0.4),transparent);"></div>
+          </div>
+          <div class="flow-content">
+            <div class="flow-node-name">🧮 Calculate KPIs (Code Node)</div>
+            <div class="flow-node-desc">Computes ROAS, CAC, CVR · Status: 🟢 ON TRACK / 🟡 NEEDS ATTENTION / 🔴 CRITICAL</div>
+          </div>
+        </div>
+        <div class="flow-row">
+          <div class="flow-connector">
+            <div class="flow-dot-node bg-purple color-purple" style="background:rgba(156,39,176,0.15);">🤖</div>
+          </div>
+          <div class="flow-content">
+            <div class="flow-node-name">🤖 GPT-4o AI Growth Intelligence</div>
+            <div class="flow-node-desc">3 key insights + 2 action items + 1 growth opportunity → #ai-insights Slack</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FLOW 4: Monthly Phase Check -->
+    <div class="workflow-section">
+      <div class="workflow-section-header">
+        <div class="icon" style="background:rgba(139,195,74,0.15);">🏆</div>
+        <div>
+          <div class="workflow-section-title">Flow 4 — Monthly Phase Check</div>
+          <div style="font-size:0.75rem;color:var(--muted);">1st of every month · MilestoneX gate check</div>
+        </div>
+        <span class="trigger-badge">Schedule · Monthly</span>
+      </div>
+      <div class="node-flow">
+        <div class="flow-row">
+          <div class="flow-connector">
+            <div class="flow-dot-node bg-green color-green" style="background:rgba(139,195,74,0.15);">📅</div>
+            <div class="flow-line"></div>
+          </div>
+          <div class="flow-content">
+            <div class="flow-node-name">📅 Monthly Review (1st of month)</div>
+            <div class="flow-node-desc">Fires phase progression check</div>
+          </div>
+        </div>
+        <div class="flow-row">
+          <div class="flow-connector">
+            <div class="flow-dot-node bg-yellow color-yellow" style="background:rgba(255,213,79,0.15);">🧮</div>
+            <div class="flow-line" style="background:linear-gradient(to bottom,rgba(255,213,79,0.4),transparent);"></div>
+          </div>
+          <div class="flow-content">
+            <div class="flow-node-name">🧮 Phase Progress Check (Code)</div>
+            <div class="flow-node-desc">Calculates daysSinceStart, currentPhase (1-6), progressPercent, isOnTrack boolean</div>
+          </div>
+        </div>
+        <div class="flow-row">
+          <div class="flow-connector">
+            <div class="flow-dot-node bg-cyan color-cyan" style="background:rgba(38,198,218,0.15);">🔀</div>
+          </div>
+          <div class="flow-content">
+            <div class="flow-node-name">🔀 On Track Gate</div>
+            <div class="flow-node-desc">
+              <span class="color-green">✓ TRUE →</span> ✅ Slack #project-updates (green report)<br>
+              <span class="color-red">✗ FALSE →</span> 🚨 Slack #alerts @channel CRITICAL escalation
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FLOW 5: SEO Agent -->
+    <div class="workflow-section">
+      <div class="workflow-section-header">
+        <div class="icon" style="background:rgba(255,213,79,0.15);">🔍</div>
+        <div>
+          <div class="workflow-section-title">Flow 5 — AI SEO Agent</div>
+          <div style="font-size:0.75rem;color:var(--muted);">Bi-weekly Monday · Ahrefs + GPT-4o</div>
+        </div>
+        <span class="trigger-badge" style="background:rgba(255,213,79,0.12);color:var(--yellow);border-color:rgba(255,213,79,0.2);">Schedule · 2-Week</span>
+      </div>
+      <div class="node-flow">
+        <div class="flow-row">
+          <div class="flow-connector">
+            <div class="flow-dot-node" style="background:rgba(255,213,79,0.15);color:var(--yellow);">🔍</div>
+            <div class="flow-line" style="background:linear-gradient(to bottom,rgba(255,213,79,0.4),transparent);"></div>
+          </div>
+          <div class="flow-content">
+            <div class="flow-node-name">🔍 Fetch Ahrefs SEO Data</div>
+            <div class="flow-node-desc">Domain Overview API · Traffic, Keywords, Backlinks, DR score</div>
+          </div>
+        </div>
+        <div class="flow-row">
+          <div class="flow-connector">
+            <div class="flow-dot-node bg-purple color-purple" style="background:rgba(156,39,176,0.15);">🤖</div>
+            <div class="flow-line" style="background:linear-gradient(to bottom,rgba(156,39,176,0.4),transparent);"></div>
+          </div>
+          <div class="flow-content">
+            <div class="flow-node-name">🤖 AI SEO Strategy Agent (GPT-4o)</div>
+            <div class="flow-node-desc">5 blog post ideas + target keywords + 3 technical fixes + 2-week content calendar</div>
+          </div>
+        </div>
+        <div class="flow-row">
+          <div class="flow-connector">
+            <div class="flow-dot-node bg-green color-green" style="background:rgba(139,195,74,0.15);">📋</div>
+          </div>
+          <div class="flow-content">
+            <div class="flow-node-name">📋 Auto-Create SEO Tasks in ClickUp</div>
+            <div class="flow-node-desc">Due: 3 days · Priority: High · Full AI content as task description</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FLOW 6: Content Agent -->
+    <div class="workflow-section">
+      <div class="workflow-section-header">
+        <div class="icon" style="background:rgba(38,198,218,0.15);">📱</div>
+        <div>
+          <div class="workflow-section-title">Flow 6 — AI Content Creator Agent</div>
+          <div style="font-size:0.75rem;color:var(--muted);">Every Monday · Full weekly social content calendar</div>
+        </div>
+        <span class="trigger-badge" style="background:rgba(38,198,218,0.12);color:var(--cyan);border-color:rgba(38,198,218,0.2);">Schedule · Weekly</span>
+      </div>
+      <div class="node-flow">
+        <div class="flow-row">
+          <div class="flow-connector">
+            <div class="flow-dot-node bg-cyan color-cyan" style="background:rgba(38,198,218,0.15);">📅</div>
+            <div class="flow-line" style="background:linear-gradient(to bottom,rgba(38,198,218,0.4),transparent);"></div>
+          </div>
+          <div class="flow-content">
+            <div class="flow-node-name">📅 Content Calendar Scheduler</div>
+            <div class="flow-node-desc">Every Monday morning · Fires the content AI agent</div>
+          </div>
+        </div>
+        <div class="flow-row">
+          <div class="flow-connector">
+            <div class="flow-dot-node bg-purple color-purple" style="background:rgba(156,39,176,0.15);">🤖</div>
+            <div class="flow-line" style="background:linear-gradient(to bottom,rgba(156,39,176,0.4),transparent);"></div>
+          </div>
+          <div class="flow-content">
+            <div class="flow-node-name">🤖 AI Content Creator (GPT-4o)</div>
+            <div class="flow-node-desc">3 LinkedIn + 3 Instagram + 2 Twitter threads + 1 Facebook · Arabic/English mix</div>
+          </div>
+        </div>
+        <div class="flow-row">
+          <div class="flow-connector">
+            <div class="flow-dot-node" style="background:rgba(139,195,74,0.15);color:var(--green);">💬</div>
+          </div>
+          <div class="flow-content">
+            <div class="flow-node-name">💬 Slack: #content-pipeline</div>
+            <div class="flow-node-desc">Full content calendar posted to Slack for team review and scheduling</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /workflow-grid -->
+
+  <!-- ENVIRONMENT VARIABLES -->
+  <div class="section-header">
+    <div class="section-number" style="background:rgba(255,213,79,0.15);color:var(--yellow);">03</div>
+    <div>
+      <div class="section-title">Environment Variables Required</div>
+      <div class="section-subtitle">Configure in n8n → Settings → Environment Variables</div>
+    </div>
+  </div>
+
+  <div class="workflow-section" style="margin-bottom:48px;">
+    <div class="env-grid">
+      <div class="env-item"><span class="env-key">GA4_PROPERTY_ID</span><span class="env-type bg-cyan color-cyan" style="background:rgba(38,198,218,0.15);">Analytics</span></div>
+      <div class="env-item"><span class="env-key">META_AD_ACCOUNT_ID</span><span class="env-type bg-cyan color-cyan" style="background:rgba(38,198,218,0.15);">Ads</span></div>
+      <div class="env-item"><span class="env-key">ERPNEXT_URL</span><span class="env-type" style="background:rgba(139,195,74,0.15);color:var(--green);">ERP</span></div>
+      <div class="env-item"><span class="env-key">ERPNEXT_API_KEY</span><span class="env-type" style="background:rgba(139,195,74,0.15);color:var(--green);">ERP</span></div>
+      <div class="env-item"><span class="env-key">ERPNEXT_API_SECRET</span><span class="env-type" style="background:rgba(139,195,74,0.15);color:var(--green);">ERP</span></div>
+      <div class="env-item"><span class="env-key">AHREFS_API_KEY</span><span class="env-type bg-yellow color-yellow" style="background:rgba(255,213,79,0.15);">SEO</span></div>
+      <div class="env-item"><span class="env-key">OPENAI_API_KEY</span><span class="env-type bg-purple color-purple" style="background:rgba(156,39,176,0.15);">AI</span></div>
+      <div class="env-item"><span class="env-key">SLACK_WEBHOOK_URL</span><span class="env-type" style="background:rgba(255,112,67,0.15);color:var(--orange);">Comms</span></div>
+      <div class="env-item"><span class="env-key">HUBSPOT_API_KEY</span><span class="env-type bg-cyan color-cyan" style="background:rgba(38,198,218,0.15);">CRM</span></div>
+      <div class="env-item"><span class="env-key">CLICKUP_API_KEY</span><span class="env-type bg-cyan color-cyan" style="background:rgba(38,198,218,0.15);">PM</span></div>
+      <div class="env-item"><span class="env-key">CLIENT_DOMAIN</span><span class="env-type" style="background:rgba(139,195,74,0.15);color:var(--green);">Config</span></div>
+      <div class="env-item"><span class="env-key">CLIENT_BRAND_NAME</span><span class="env-type" style="background:rgba(139,195,74,0.15);color:var(--green);">Config</span></div>
+      <div class="env-item"><span class="env-key">CLIENT_INDUSTRY</span><span class="env-type" style="background:rgba(139,195,74,0.15);color:var(--green);">Config</span></div>
+      <div class="env-item"><span class="env-key">CLIENT_START_DATE</span><span class="env-type" style="background:rgba(139,195,74,0.15);color:var(--green);">Config</span></div>
+      <div class="env-item"><span class="env-key">CLIENT_EMAILS</span><span class="env-type" style="background:rgba(139,195,74,0.15);color:var(--green);">Config</span></div>
+    </div>
+  </div>
+
+  <!-- INTEGRATIONS -->
+  <div class="section-header">
+    <div class="section-number" style="background:rgba(156,39,176,0.15);color:var(--purple);">04</div>
+    <div>
+      <div class="section-title">Tool Integrations Stack</div>
+      <div class="section-subtitle">All connected via native n8n nodes or HTTP Request</div>
+    </div>
+  </div>
+
+  <div class="workflow-section" style="margin-bottom:48px;">
+    <div class="integration-grid">
+      <div class="integration-card">
+        <div class="int-icon" style="background:rgba(38,198,218,0.15);">🔄</div>
+        <div class="int-name color-cyan">n8n</div>
+        <div class="int-use">Workflow Engine · All orchestration</div>
+      </div>
+      <div class="integration-card">
+        <div class="int-icon" style="background:rgba(139,195,74,0.15);">🏢</div>
+        <div class="int-name color-green">ERPNext</div>
+        <div class="int-use">Project + Task management · REST API</div>
+      </div>
+      <div class="integration-card">
+        <div class="int-icon" style="background:rgba(255,112,67,0.15);">🔗</div>
+        <div class="int-name color-orange">HubSpot</div>
+        <div class="int-use">CRM · Contact + Deal lifecycle</div>
+      </div>
+      <div class="integration-card">
+        <div class="int-icon" style="background:rgba(38,198,218,0.15);">📋</div>
+        <div class="int-name color-cyan">ClickUp</div>
+        <div class="int-use">Task management · All phase tasks</div>
+      </div>
+      <div class="integration-card">
+        <div class="int-icon" style="background:rgba(255,213,79,0.15);">💬</div>
+        <div class="int-name color-yellow">Slack</div>
+        <div class="int-use">Team alerts · 6 dedicated channels</div>
+      </div>
+      <div class="integration-card">
+        <div class="int-icon" style="background:rgba(239,83,80,0.15);">📈</div>
+        <div class="int-name color-red">Google Analytics 4</div>
+        <div class="int-use">Website KPIs · Weekly reports</div>
+      </div>
+      <div class="integration-card">
+        <div class="int-icon" style="background:rgba(38,198,218,0.15);">📢</div>
+        <div class="int-name color-cyan">Meta Ads</div>
+        <div class="int-use">ROAS, spend, conversions tracking</div>
+      </div>
+      <div class="integration-card">
+        <div class="int-icon" style="background:rgba(255,213,79,0.15);">🔍</div>
+        <div class="int-name color-yellow">Ahrefs</div>
+        <div class="int-use">SEO data · Bi-weekly strategy</div>
+      </div>
+      <div class="integration-card">
+        <div class="int-icon" style="background:rgba(156,39,176,0.15);">🤖</div>
+        <div class="int-name color-purple">OpenAI GPT-4o</div>
+        <div class="int-use">3 AI agents · Insights, SEO, Content</div>
+      </div>
+      <div class="integration-card">
+        <div class="int-icon" style="background:rgba(255,112,67,0.15);">📧</div>
+        <div class="int-name color-orange">SMTP Email</div>
+        <div class="int-use">HTML emails · Welcome + Weekly reports</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLACK CHANNELS -->
+  <div class="section-header">
+    <div class="section-number" style="background:rgba(255,112,67,0.15);color:var(--orange);">05</div>
+    <div>
+      <div class="section-title">Slack Channels Required</div>
+      <div class="section-subtitle">Create these channels before activating the workflow</div>
+    </div>
+  </div>
+
+  <div class="workflow-section" style="margin-bottom:0;">
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;padding:20px;">
+      <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:10px;padding:14px;display:flex;align-items:center;gap:12px;">
+        <span style="font-size:1.2rem;">🎯</span>
+        <div><div style="font-weight:600;font-size:0.85rem;font-family:'JetBrains Mono',monospace;color:var(--green);">#new-clients</div><div style="font-size:0.75rem;color:var(--muted);margin-top:2px;">New client onboarding alerts</div></div>
+      </div>
+      <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:10px;padding:14px;display:flex;align-items:center;gap:12px;">
+        <span style="font-size:1.2rem;">🚨</span>
+        <div><div style="font-weight:600;font-size:0.85rem;font-family:'JetBrains Mono',monospace;color:var(--red);">#alerts</div><div style="font-size:0.75rem;color:var(--muted);margin-top:2px;">Overdue tasks + off-track milestones</div></div>
+      </div>
+      <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:10px;padding:14px;display:flex;align-items:center;gap:12px;">
+        <span style="font-size:1.2rem;">📊</span>
+        <div><div style="font-weight:600;font-size:0.85rem;font-family:'JetBrains Mono',monospace;color:var(--cyan);">#weekly-reports</div><div style="font-size:0.75rem;color:var(--muted);margin-top:2px;">Friday performance reports</div></div>
+      </div>
+      <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:10px;padding:14px;display:flex;align-items:center;gap:12px;">
+        <span style="font-size:1.2rem;">🧠</span>
+        <div><div style="font-weight:600;font-size:0.85rem;font-family:'JetBrains Mono',monospace;color:var(--purple);">#ai-insights</div><div style="font-size:0.75rem;color:var(--muted);margin-top:2px;">GPT-4o growth intelligence briefs</div></div>
+      </div>
+      <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:10px;padding:14px;display:flex;align-items:center;gap:12px;">
+        <span style="font-size:1.2rem;">✅</span>
+        <div><div style="font-weight:600;font-size:0.85rem;font-family:'JetBrains Mono',monospace;color:var(--green);">#project-updates</div><div style="font-size:0.75rem;color:var(--muted);margin-top:2px;">Monthly milestone gate results</div></div>
+      </div>
+      <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:10px;padding:14px;display:flex;align-items:center;gap:12px;">
+        <span style="font-size:1.2rem;">📱</span>
+        <div><div style="font-weight:600;font-size:0.85rem;font-family:'JetBrains Mono',monospace;color:var(--yellow);">#content-pipeline</div><div style="font-size:0.75rem;color:var(--muted);margin-top:2px;">Weekly AI-generated content calendars</div></div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div>
+    <div class="footer-brand">Hunters Growth</div>
+    <p>Complete n8n Workflow · Designed by Mohamed Salah · ERPNext & AI Automation Expert</p>
+  </div>
+  <div class="footer-links">
+    <a href="https://wa.me/201113903070" class="footer-link" target="_blank">
+      💬 WhatsApp
+    </a>
+    <a href="https://moh222salah.github.io/cv" class="footer-link" target="_blank">
+      🌐 Portfolio
+    </a>
+    <a href="https://moh222salah.github.io/market-flow/" class="footer-link" target="_blank">
+      🚀 Market Flow
+    </a>
+  </div>
+</footer>
+
+<script>
+// Animate pipeline cards on hover with glow effect
+document.querySelectorAll('.pipeline-card').forEach(card => {
+  card.addEventListener('mouseenter', () => {
+    const topBar = card.querySelector('[style*="height:3px"]');
+    if (topBar) {
+      const color = topBar.style.background;
+      card.style.boxShadow = `0 8px 32px ${color.includes('gradient') ? 'rgba(139,195,74,0.2)' : color.replace('var(--green)','rgba(139,195,74,0.3)').replace('var(--yellow)','rgba(255,213,79,0.3)').replace('var(--cyan)','rgba(38,198,218,0.3)')}`;
+    }
+  });
+  card.addEventListener('mouseleave', () => {
+    card.style.boxShadow = '';
+  });
+});
+</script>
+</body>
+</html>

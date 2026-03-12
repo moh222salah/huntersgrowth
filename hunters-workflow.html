@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="ar" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="slides-format" content="viewport">
+    <title>Hunters Growth — Full Workflow</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/motion@12/dist/motion.js"></script>
+
+    <style type="text/tailwindcss">
+        @theme {
+            --color-bg: #0f0f14;
+            --color-bg-deep: #08080c;
+            --color-surface: #1a1a24;
+            --color-text: #f0f0f5;
+            --color-text-secondary: #c0c0d0;
+            --color-text-muted: #7a7a9a;
+            --color-accent-1: #8BC34A;
+            --color-accent-2: #FFD54F;
+            --color-accent-3: #26C6DA;
+            --color-glass-bg: rgba(255,255,255,0.05);
+            --color-glass-border: rgba(255,255,255,0.08);
+            --color-vignette: rgba(0,0,0,0.45);
+            --font-display: 'Archivo Black', sans-serif;
+            --font-body: 'DM Sans', sans-serif;
+        }
+    </style>
+
+    <style>
+        :root { --color-bg: #0f0f14; --color-text: #f0f0f5; --glow-color-rgb: 139,195,74; }
+        *, *::before, *::after { box-sizing: border-box; }
+        html, body { background: var(--color-bg); margin: 0; }
+        body { font-family: var(--font-body); color: var(--color-text); overflow: hidden; height: 100vh; width: 100vw; }
+        .deck { width: 100vw; height: 100vh; position: relative; }
+        .slide { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: var(--color-bg); display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0; transform: scale(0.95); transition: opacity 0.7s ease, transform 0.7s ease; pointer-events: none; overflow: hidden; }
+        .slide.active { opacity: 1; transform: scale(1); pointer-events: all; }
+        .slide > .content { position: relative; z-index: 2; width: 100%; max-width: 1100px; padding: clamp(1.5rem, 4vw, 3.5rem); }
+        .nav-controls { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 16px; z-index: 100; background: var(--color-glass-bg); backdrop-filter: blur(10px); padding: 10px 24px; border-radius: 40px; border: 1px solid var(--color-glass-border); }
+        .nav-btn { width: 40px; height: 40px; border: none; background: var(--color-glass-bg); color: var(--color-accent-1); border-radius: 50%; font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.3s; }
+        .nav-btn:hover { background: var(--color-glass-border); }
+        .slide-dots { display: flex; gap: 8px; }
+        .slide-dots .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--color-glass-border); cursor: pointer; transition: background 0.3s, transform 0.3s; }
+        .slide-dots .dot.active { background: var(--color-accent-1); transform: scale(1.3); }
+        .slide-counter { font-size: 0.8rem; color: var(--color-text-muted); min-width: 40px; text-align: center; }
+        .reveal { opacity: 0; transform: translateY(20px); }
+        .text-glow { text-shadow: 0 0 20px rgba(var(--glow-color-rgb), 0.5), 0 0 40px rgba(var(--glow-color-rgb), 0.2); }
+        .stat-glow { text-shadow: 0 0 30px rgba(var(--glow-color-rgb), 0.6), 0 0 60px rgba(var(--glow-color-rgb), 0.25); }
+        @keyframes glow-pulse { 0%, 100% { text-shadow: 0 0 20px rgba(var(--glow-color-rgb), 0.5), 0 0 40px rgba(var(--glow-color-rgb), 0.2); } 50% { text-shadow: 0 0 30px rgba(var(--glow-color-rgb), 0.8), 0 0 60px rgba(var(--glow-color-rgb), 0.3); } }
+        .glow-pulse { animation: glow-pulse 3s ease-in-out infinite; }
+        @keyframes float-slow { 0% { transform: translate(0, 0) scale(1); } 25% { transform: translate(60px, -50px) scale(1.12); } 50% { transform: translate(-40px, 40px) scale(0.9); } 75% { transform: translate(50px, 20px) scale(1.08); } 100% { transform: translate(0, 0) scale(1); } }
+        @keyframes float-drift { 0% { transform: translate(0, 0) scale(1) rotate(0deg); } 33% { transform: translate(-50px, -60px) scale(1.15) rotate(3deg); } 66% { transform: translate(40px, 30px) scale(0.88) rotate(-2deg); } 100% { transform: translate(0, 0) scale(1) rotate(0deg); } }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
+        .gradient-mesh { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+        .blob { position: absolute; border-radius: 50%; filter: blur(80px); animation: float-slow 10s ease-in-out infinite; }
+        .blob:nth-child(2) { animation: float-drift 14s ease-in-out infinite; }
+        .blob:nth-child(3) { animation: float-slow 18s ease-in-out infinite reverse; }
+        .slide::before { content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E"); background-repeat: repeat; background-size: 256px 256px; opacity: 0.03; mix-blend-mode: overlay; }
+        .slide::after { content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none; background: radial-gradient(ellipse at center, transparent 50%, var(--color-vignette) 100%); }
+        @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.2s !important; } }
+
+        /* Flow step styling */
+        .flow-step { position: relative; padding-left: 2.5rem; }
+        .flow-step::before { content: ''; position: absolute; left: 0.65rem; top: 2rem; bottom: -1rem; width: 2px; background: linear-gradient(to bottom, var(--color-accent-1), transparent); }
+        .flow-step:last-child::before { display: none; }
+        .flow-dot { position: absolute; left: 0; top: 0.35rem; width: 1.4rem; height: 1.4rem; border-radius: 50%; background: var(--color-accent-1); box-shadow: 0 0 12px rgba(var(--glow-color-rgb), 0.5); display: flex; align-items: center; justify-content: center; font-size: 0.65rem; font-weight: 700; color: #0f0f14; }
+
+        .phase-badge { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.35rem 1rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; }
+
+        /* Arrow connector */
+        .arrow-down { display: flex; justify-content: center; margin: 0.5rem 0; }
+        .arrow-down::after { content: '▼'; color: var(--color-accent-1); font-size: 1.2rem; opacity: 0.6; }
+
+        .bar-fill { height: 100%; border-radius: 6px; transition: width 1.5s cubic-bezier(0.16, 1, 0.3, 1); }
+    </style>
+</head>
+<body>
+
+<div class="mouse-spotlight" style="position:fixed;inset:0;z-index:99;pointer-events:none;"></div>
+
+<div class="deck">
+
+    <!-- SLIDE 1: Title -->
+    <div class="slide slide-1 active" data-slide="1">
+        <div class="gradient-mesh">
+            <div class="blob" style="width:500px;height:500px;top:-100px;right:-100px;background:var(--color-accent-1);opacity:0.15;"></div>
+            <div class="blob" style="width:350px;height:350px;bottom:-80px;left:-60px;background:var(--color-accent-2);opacity:0.12;"></div>
+            <div class="blob" style="width:200px;height:200px;top:40%;left:15%;background:var(--color-accent-3);opacity:0.1;"></div>
+        </div>
+        <canvas class="particle-canvas" style="position:absolute;inset:0;z-index:1;"></canvas>
+        <div class="content text-center">
+            <div class="text-[100px] mb-4 animate-[float_3s_ease-in-out_infinite]">⚙️</div>
+            <h1 class="font-display text-[clamp(2.2rem,5.5vw,4.2rem)] font-black bg-linear-to-br from-accent-1 via-accent-2 to-accent-1 bg-clip-text text-transparent tracking-tight mb-4 reveal">Hunters Growth</h1>
+            <p class="text-[clamp(1rem,2vw,1.6rem)] font-light text-text-muted tracking-[6px] uppercase reveal">COMPLETE WORKFLOW SYSTEM</p>
+            <p class="text-text-secondary mt-6 text-lg reveal">الوورك فلو الكامل لكل مرحلة من مراحل العمل مع العملاء</p>
+        </div>
+    </div>
+
+    <!-- SLIDE 2: Workflow Overview -->
+    <div class="slide slide-2" data-slide="2">
+        <div class="gradient-mesh">
+            <div class="blob" style="width:400px;height:400px;top:-80px;right:-80px;background:var(--color-accent-1);opacity:0.08;"></div>
+            <div class="blob" style="width:250px;height:250px;bottom:-60px;left:-40px;background:var(--color-accent-3);opacity:0.06;"></div>
+        </div>
+        <canvas class="particle-canvas-ambient" style="position:absolute;inset:0;z-index:1;"></canvas>
+        <div class="content">
+            <p class="text-accent-1 uppercase tracking-[0.12em] text-sm font-semibold mb-2 reveal">System Architecture</p>
+            <h2 class="font-display text-[clamp(1.8rem,4vw,2.8rem)] font-bold mb-8 reveal">6 Phases — End to End</h2>
+            <div class="grid grid-cols-3 gap-4 reveal">
+                <div class="bg-glass-bg backdrop-blur-xl border border-glass-border rounded-xl p-5 hover:-translate-y-1 hover:shadow-xl transition text-center">
+                    <div class="text-3xl mb-2">🔍</div>
+                    <p class="font-bold text-accent-1 text-sm">Phase 1</p>
+                    <p class="text-text-secondary text-sm mt-1">Discovery & Audit</p>
+                    <p class="text-text-muted text-xs mt-1">Week 1</p>
+                </div>
+                <div class="bg-glass-bg backdrop-blur-xl border border-glass-border rounded-xl p-5 hover:-translate-y-1 hover:shadow-xl transition text-center">
+                    <div class="text-3xl mb-2">📐</div>
+                    <p class="font-bold text-accent-2 text-sm">Phase 2</p>
+                    <p class="text-text-secondary text-sm mt-1">Strategy & Blueprint</p>
+                    <p class="text-text-muted text-xs mt-1">Week 2-3</p>
+                </div>
+                <div class="bg-glass-bg backdrop-blur-xl border border-glass-border rounded-xl p-5 hover:-translate-y-1 hover:shadow-xl transition text-center">
+                    <div class="text-3xl mb-2">🚀</div>
+                    <p class="font-bold text-accent-3 text-sm">Phase 3</p>
+                    <p class="text-text-secondary text-sm mt-1">Launch & Execute</p>
+                    <p class="text-text-muted text-xs mt-1">Week 3-6</p>
+                </div>
+            </div>
+            <div class="grid grid-cols-3 gap-4 mt-4 reveal">
+                <div class="bg-glass-bg backdrop-blur-xl border border-glass-border rounded-xl p-5 hover:-translate-y-1 hover:shadow-xl transition text-center">
+                    <div class="text-3xl mb-2">📊</div>
+                    <p class="font-bold text-accent-1 text-sm">Phase 4</p>
+                    <p class="text-text-secondary text-sm mt-1">Measure & Optimize</p>
+                    <p class="text-text-muted text-xs mt-1">Week 6-10</p>
+                </div>
+                <div class="bg-glass-bg backdrop-blur-xl border border-glass-border rounded-xl p-5 hover:-translate-y-1 hover:shadow-xl transition text-center">
+                    <div class="text-3xl mb-2">⚡</div>
+                    <p class="font-bold text-accent-2 text-sm">Phase 5</p>
+                    <p class="text-text-secondary text-sm mt-1">Scale & Expand</p>
+                    <p class="text-text-muted text-xs mt-1">Month 3-6</p>
+                </div>
+                <div class="bg-glass-bg backdrop-blur-xl border border-glass-border rounded-xl p-5 hover:-translate-y-1 hover:shadow-xl transition text-center">
+                    <div class="text-3xl mb-2">🔄</div>
+                    <p class="font-bold text-accent-3 text-sm">Phase 6</p>
+                    <p class="text-text-secondary text-sm mt-1">Retain & Iterate</p>
+                    <p class="text-text-muted text-xs mt-1">Ongoing</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 3: Phase 1 — Discovery & Audit -->
+    <div class="slide slide-3" data-slide="3">
+        <div class="gradient-mesh">
+            <div class="blob" style="width:350px;height:350px;top:-60px;left:-80px;background:var(--color-accent-1);opacity:0.08;"></div>
+            <div class="blob" style="width:250px;height:250px;bottom:-50px;right:-40px;background:var(--color-accent-2);opacity:0.06;"></div>
+        </div>
+        <div class="content">
+            <div class="flex items-center gap-3 mb-2 reveal">
+                <span class="phase-badge bg-accent-1/20 text-accent-1">Phase 1</span>
+                <span class="text-text-muted text-sm">Week 1 · Duration: 5-7 Days</span>
+            </div>
+            <h2 class="font-display text-[clamp(1.8rem,4vw,2.6rem)] font-bold mb-6 reveal">🔍 Discovery & Audit</h2>
+            <div class="grid grid-cols-2 gap-5">
+                <div class="reveal">
+                    <div class="flow-step">
+                        <div class="flow-dot">1</div>
+                        <p class="font-semibold text-accent-1 text-sm">Onboarding Call — 60 min</p>
+                        <p class="text-text-muted text-xs mt-1">فهم أهداف العميل، التحديات، الـ KPIs المطلوبة</p>
+                    </div>
+                    <div class="flow-step mt-4">
+                        <div class="flow-dot">2</div>
+                        <p class="font-semibold text-accent-1 text-sm">Business Audit Questionnaire</p>
+                        <p class="text-text-muted text-xs mt-1">15 سؤال عن البيزنس، السوق، المنافسين، الميزانية</p>
+                    </div>
+                    <div class="flow-step mt-4">
+                        <div class="flow-dot">3</div>
+                        <p class="font-semibold text-accent-1 text-sm">Tech Stack & Channel Audit</p>
+                        <p class="text-text-muted text-xs mt-1">مراجعة CRM، Analytics، Ads، Social، Website</p>
+                    </div>
+                </div>
+                <div class="reveal">
+                    <div class="flow-step">
+                        <div class="flow-dot">4</div>
+                        <p class="font-semibold text-accent-2 text-sm">Competitor Deep Dive</p>
+                        <p class="text-text-muted text-xs mt-1">تحليل 3-5 منافسين: positioning، pricing، channels</p>
+                    </div>
+                    <div class="flow-step mt-4">
+                        <div class="flow-dot">5</div>
+                        <p class="font-semibold text-accent-2 text-sm">ICP & Persona Mapping</p>
+                        <p class="text-text-muted text-xs mt-1">تحديد الـ Ideal Customer Profile + Buyer Personas</p>
+                    </div>
+                    <div class="flow-step mt-4">
+                        <div class="flow-dot">6</div>
+                        <p class="font-semibold text-accent-2 text-sm">Discovery Report Delivery</p>
+                        <p class="text-text-muted text-xs mt-1">تقرير شامل + SWOT + فرص النمو المحددة</p>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-5 bg-glass-bg backdrop-blur-xl border border-glass-border rounded-lg p-3 reveal">
+                <p class="text-xs text-text-muted">📋 <strong class="text-accent-3">Deliverable:</strong> Discovery Report (20-30 pages) + Recorded Presentation + Competitive Matrix</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 4: Phase 1 — Tools & SLAs -->
+    <div class="slide slide-4" data-slide="4">
+        <div class="gradient-mesh">
+            <div class="blob" style="width:300px;height:300px;top:-70px;right:-60px;background:var(--color-accent-3);opacity:0.07;"></div>
+            <div class="blob" style="width:200px;height:200px;bottom:-50px;left:-30px;background:var(--color-accent-1);opacity:0.06;"></div>
+        </div>
+        <div class="content">
+            <div class="flex items-center gap-3 mb-2 reveal">
+                <span class="phase-badge bg-accent-1/20 text-accent-1">Phase 1</span>
+                <span class="text-text-muted text-sm">Tools & SLAs</span>
+            </div>
+            <h2 class="font-display text-[clamp(1.6rem,3.5vw,2.2rem)] font-bold mb-6 reveal">Tools, Timelines & Ownership</h2>
+            <div class="grid grid-cols-3 gap-4">
+                <div class="bg-glass-bg backdrop-blur-xl border border-glass-border rounded-xl p-5 hover:-translate-y-1 transition reveal">
+                    <div class="text-2xl mb-2">🛠️</div>
+                    <p class="font-bold text-sm">Tools Used</p>
+                    <ul class="text-text-muted text-xs mt-2 space-y-1">
+                        <li>• Google Analytics 4</li>
+                        <li>• SEMrush / SimilarWeb</li>
+                        <li>• HubSpot CRM Audit</li>
+                        <li>• ClickUp (PM)</li>
+                    </ul>
+                </div>
+                <div class="bg-glass-bg backdrop-blur-xl border border-glass-border rounded-xl p-5 hover:-translate-y-1 transition reveal">
+                    <div class="text-2xl mb-2">⏱️</div>
+                    <p class="font-bold text-sm">SLA Commitments</p>
+                    <ul class="text-text-muted text-xs mt-2 space-y-1">
+                        <li>• Onboarding Call: Day 1</li>
+                        <li>• Questionnaire: Day 2</li>
+                        <li>• Audit Complete: Day 5</li>
+                        <li>• Report Delivery: Day 7</li>
+                    </ul>
+                </div>
+                <div class="bg-glass-bg backdrop-blur-xl border border-glass-border rounded-xl p-5 hover:-translate-y-1 transition reveal">
+                    <div class="text-2xl mb-2">👥</div>
+                    <p class="font-bold text-sm">Team Ownership</p>
+                    <ul class="text-text-muted text-xs mt-2 space-y-1">
+                        <li>• Account Manager → Lead</li>
+                        <li>• Growth Strategist → Audit</li>
+                        <li>• Data Analyst → Numbers</li>
+                        <li>• Client → Assets & Access</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="mt-5 bg-glass-bg backdrop-blur-xl border border-accent-1/20 rounded-lg p-4 reveal">
+                <p class="text-sm font-semibold text-accent-1 mb-2">🎯 Milestone Gate: Client Sign-Off on Discovery Report</p>
+                <p class="text-xs text-text-muted">العميل لازم يوافق على التقرير قبل الانتقال للـ Phase 2 — ده بيضمن alignment كامل</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 5: Phase 2 — Strategy & Blueprint -->
+    <div class="slide slide-5" data-slide="5">
+        <div class="gradient-mesh">
+            <div class="blob" style="width:400px;height:400px;top:-80px;left:-60px;background:var(--color-accent-2);opacity:0.08;"></div>
+            <div class="blob" style="width:250px;height:250px;bottom:-50px;right:-40px;background:var(--color-accent-1);opacity:0.06;"></div>
+        </div>
+        <div class="content">
+            <div class="flex items-center gap-3 mb-2 reveal">
+                <span class="phase-badge bg-accent-2/20 text-accent-2">Phase 2</span>
+                <span class="text-text-muted text-sm">Week 2-3 · Duration: 7-10 Days</span>
+            </div>
+            <h2 class="font-display text-[clamp(1.8rem,4vw,2.6rem)] font-bold mb-6 reveal">📐 Strategy & Blueprint</h2>
+            <div class="grid grid-cols-2 gap-5">
+                <div class="reveal">
+                    <div class="flow-step">
+                        <div class="flow-dot" style="background:var(--color-accent-2);box-shadow:0 0 12px rgba(255,213,79,0.5);">1</div>
+                        <p class="font-semibold text-accent-2 text-sm">Growth Strategy Workshop — 90 min</p>
+                        <p class="text-text-muted text-xs mt-1">جلسة مع الفريق والعميل لتحديد أولويات النمو</p>
+                    </div>
+                    <div class="flow-step mt-4">
+                        <div class="flow-dot" style="background:var(--color-accent-2);box-shadow:0 0 12px rgba(255,213,79,0.5);">2</div>
+                        <p class="font-semibold text-accent-2 text-sm">90-Day Growth Roadmap</p>
+                        <p class="text-text-muted text-xs mt-1">خطة تفصيلية بـ OKRs + KPIs + Milestones لكل شهر</p>
+                    </div>
+                    <div class="flow-step mt-4">
+                        <div class="flow-dot" style="background:var(--color-accent-2);box-shadow:0 0 12px rgba(255,213,79,0.5);">3</div>
+                        <p class="font-semibold text-accent-2 text-sm">Channel Mix Selection</p>
+                        <p class="text-text-muted text-xs mt-1">اختيار القنوات الأنسب: SEO، Paid، Content، Email</p>
+                    </div>
+                </div>
+                <div class="reveal">
+                    <div class="flow-step">
+                        <div class="flow-dot" style="background:var(--color-accent-2);box-shadow:0 0 12px rgba(255,213,79,0.5);">4</div>
+                        <p class="font-semibold text-accent-2 text-sm">Budget Allocation Matrix</p>
+                        <p class="text-text-muted text-xs mt-1">توزيع الميزانية على كل قناة بناءً على ROI المتوقع</p>
+                    </div>
+                    <div class="flow-step mt-4">
+                        <div class="flow-dot" style="background:var(--color-accent-2);box-shadow:0 0 12px rgba(255,213,79,0.5);">5</div>
+                        <p class="font-semibold text-accent-2 text-sm">Content & Creative Brief</p>
+                        <p class="text-text-muted text-xs mt-1">Brand voice + messaging framework + content calendar</p>
+                    </div>
+                    <div class="flow-step mt-4">
+                        <div class="flow-dot" style="background:var(--color-accent-2);box-shadow:0 0 12px rgba(255,213,79,0.5);">6</div>
+                        <p class="font-semibold text-accent-2 text-sm">Blueprint Approval Meeting</p>
+                        <p class="text-text-muted text-xs mt-1">عرض الخطة الكاملة + موافقة العميل + بدء التنفيذ</p>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-5 bg-glass-bg backdrop-blur-xl border border-glass-border rounded-lg p-3 reveal">
+                <p class="text-xs text-text-muted">📋 <strong class="text-accent-2">Deliverable:</strong> Growth Blueprint Deck + 90-Day Roadmap + Budget Sheet + Content Calendar Template</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 6: Phase 2 — Blueprint Details -->
+    <div class="slide slide-6" data-slide="6">
+        <div class="gradient-mesh">
+            <div class="blob" style="width:300px;height:300px;top:-50px;right:-70px;background:var(--color-accent-2);opacity:0.07;"></div>
+            <div class="blob" style="width:200px;height:200px;bottom:-40px;left:-30px;background:var(--color-accent-3);opacity:0.05;"></div>
+        </div>
+        <div class="content">
+            <div class="flex items-center gap-3 mb-2 reveal">
+                <span class="phase-badge bg-accent-2/20 text-accent-2">Phase 2</span>
+                <span class="text-text-muted text-sm">Blueprint Components</span>
+            </div>
+            <h2 class="font-display text-[clamp(1.6rem,3.5vw,2.2rem)] font-bold mb-6 reveal">Inside the Growth Blueprint</h2>
+            <div class="grid grid-cols-2 gap-4">
+                <div class="bg-glass-bg backdrop-blur-xl border border-l-4 border-accent-2 rounded-xl p-5 hover:-translate-y-1 transition reveal">
+                    <p class="font-bold text-sm mb-2">🎯 OKR Framework</p>
+                    <p class="text-text-muted text-xs">3 أهداف رئيسية + 3 نتائج قابلة للقياس لكل هدف — مراجعة أسبوعية لتتبع التقدم ومعالجة العوائق</p>
+                </div>
+                <div class="bg-glass-bg backdrop-blur-xl border border-l-4 border-accent-1 rounded-xl p-5 hover:-translate-y-1 transition reveal">
+                    <p class="font-bold text-sm mb-2">📊 Milestone Ledger</p>
+                    <p class="text-text-muted text-xs">كل milestone بتاريخ محدد + مسؤول + معيار نجاح — ربطها بالـ payment gates عشان الضمان</p>
+                </div>
+                <div class="bg-glass-bg backdrop-blur-xl border border-l-4 border-accent-3 rounded-xl p-5 hover:-translate-y-1 transition reveal">
+                    <p class="font-bold text-sm mb-2">💰 Budget Waterfall</p>
+                    <p class="text-text-muted text-xs">توزيع الميزانية شهرياً — 40% Paid Ads، 25% Content، 20% Tech، 15% Buffer للتجارب</p>
+                </div>
+                <div class="bg-glass-bg backdrop-blur-xl border border-l-4 border-accent-2 rounded-xl p-5 hover:-translate-y-1 transition reveal">
+                    <p class="font-bold text-sm mb-2">🗓️ Sprint Calendar</p>
+                    <p class="text-text-muted text-xs">2-week sprints مع daily standups + weekly reviews — كل sprint ليه deliverables واضحة</p>
+                </div>
+            </div>
+            <div class="mt-5 bg-glass-bg backdrop-blur-xl border border-accent-2/20 rounded-lg p-4 reveal">
+                <p class="text-sm font-semibold text-accent-2 mb-2">🎯 Milestone Gate: Blueprint Sign-Off + Sprint 1 Kickoff</p>
+                <p class="text-xs text-text-muted">بعد موافقة العميل على الـ Blueprint، بنبدأ Sprint 1 خلال 48 ساعة — لا تأخير</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 7: Phase 3 — Launch & Execute -->
+    <div class="slide slide-7" data-slide="7">
+        <div class="gradient-mesh">
+            <div class="blob" style="width:400px;height:400px;top:-80px;right:-80px;background:var(--color-accent-3);opacity:0.08;"></div>
+            <div class="blob" style="width:250px;height:250px;bottom:-60px;left:-40px;background:var(--color-accent-1);opacity:0.06;"></div>
+        </div>
+        <div class="content">
+            <div class="flex items-center gap-3 mb-2 reveal">
+                <span class="phase-badge bg-accent-3/20 text-accent-3">Phase 3</span>
+                <span class="text-text-muted text-sm">Week 3-6 · Duration: 3-4 Weeks</span>
+            </div>
+            <h2 class="font-display text-[clamp(1.8rem,4vw,2.6rem)] font-bold mb-6 reveal">🚀 Launch & Execute</h2>
+            <div class="grid grid-cols-2 gap-5">
+                <div class="reveal">
+                    <div class="flow-step">
+                        <div class="flow-dot" style="background:var(--color-accent-3);box-shadow:0 0 12px rgba(38,198,218,0.5);">1</div>
+                        <p class="font-semibold text-accent-3 text-sm">Quick Wins Sprint — Week 1</p>
+                        <p class="text-text-muted text-xs mt-1">حملات سريعة + تحسينات فورية تجيب نتائج في أول 7 أيام</p>
+                    </div>
+                    <div class="flow-step mt-4">
+                        <div class="flow-dot" style="background:var(--color-accent-3);box-shadow:0 0 12px rgba(38,198,218,0.5);">2</div>
+                        <p class="font-semibold text-accent-3 text-sm">Campaign Build & Launch</p>
+                        <p class="text-text-muted text-xs mt-1">بناء الحملات على كل القنوات المختارة + A/B Testing</p>
+                    </div>
+                    <div class="flow-step mt-4">
+                        <div class="flow-dot" style="background:var(--color-accent-3);box-shadow:0 0 12px rgba(38,198,218,0.5);">3</div>
+                        <p class="font-semibold text-accent-3 text-sm">Content Production Pipeline</p>
+                        <p class="text-text-muted text-xs mt-1">إنتاج 12-20 قطعة محتوى/شهر — blogs، videos، social</p>
+                    </div>
+                </div>
+                <div class="reveal">
+                    <div class="flow-step">
+                        <div class="flow-dot" style="background:var(--color-accent-3);box-shadow:0 0 12px rgba(38,198,218,0.5);">4</div>
+                        <p class="font-semibold text-accent-3 text-sm">Tech Setup & Automation</p>
+                        <p class="text-text-muted text-xs mt-1">CRM flows، email sequences، chatbot، tracking pixels</p>
+                    </div>
+                    <div class="flow-step mt-4">
+                        <div class="flow-dot" style="background:var(--color-accent-3);box-shadow:0 0 12px rgba(38,198,218,0.5);">5</div>
+                        <p class="font-semibold text-accent-3 text-sm">Daily Monitoring Dashboard</p>
+                        <p class="text-text-muted text-xs mt-1">لوحة تحكم real-time — spend، leads، conversions، ROI</p>
+                    </div>
+                    <div class="flow-step mt-4">
+                        <div class="flow-dot" style="background:var(--color-accent-3);box-shadow:0 0 12px rgba(38,198,218,0.5);">6</div>
+                        <p class="font-semibold text-accent-3 text-sm">Weekly Check-in Call — 30 min</p>
+                        <p class="text-text-muted text-xs mt-1">تحديث أسبوعي + نتائج + تعديلات + next sprint planning</p>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-5 bg-glass-bg backdrop-blur-xl border border-glass-border rounded-lg p-3 reveal">
+                <p class="text-xs text-text-muted">📋 <strong class="text-accent-3">Deliverable:</strong> Live Campaigns + Dashboard Access + Weekly Reports + Content Assets</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 8: Phase 3 — Execution Engine -->
+    <div class="slide slide-8" data-slide="8">
+        <div class="gradient-mesh">
+            <div class="blob" style="width:320px;height:320px;top:-60px;left:-50px;background:var(--color-accent-3);opacity:0.07;"></div>
+            <div class="blob" style="width:200px;height:200px;bottom:-40px;right:-30px;background:var(--color-accent-2);opacity:0.05;"></div>
+        </div>
+        <div class="content">
+            <div class="flex items-center gap-3 mb-2 reveal">
+                <span class="phase-badge bg-accent-3/20 text-accent-3">Phase 3</span>
+                <span class="text-text-muted text-sm">Execution Engine</span>
+            </div>
+            <h2 class="font-display text-[clamp(1.6rem,3.5vw,2.2rem)] font-bold mb-5 reveal">Sprint Execution Rhythm</h2>
+            <div class="bg-glass-bg backdrop-blur-xl border border-glass-border rounded-xl p-5 reveal">
+                <div class="grid grid-cols-5 gap-3 text-center">
+                    <div>
+                        <div class="w-12 h-12 rounded-full bg-accent-3/20 flex items-center justify-center mx-auto mb-2 text-lg">📝</div>
+                        <p class="text-xs font-bold text-accent-3">Mon</p>
+                        <p class="text-[10px] text-text-muted mt-1">Sprint Planning + Task Assign</p>
+                    </div>
+                    <div>
+                        <div class="w-12 h-12 rounded-full bg-accent-1/20 flex items-center justify-center mx-auto mb-2 text-lg">⚡</div>
+                        <p class="text-xs font-bold text-accent-1">Tue-Thu</p>
+                        <p class="text-[10px] text-text-muted mt-1">Build, Create, Launch + Daily Standup</p>
+                    </div>
+                    <div>
+                        <div class="w-12 h-12 rounded-full bg-accent-2/20 flex items-center justify-center mx-auto mb-2 text-lg">🔍</div>
+                        <p class="text-xs font-bold text-accent-2">Fri</p>
+                        <p class="text-[10px] text-text-muted mt-1">QA Review + Client Approval</p>
+                    </div>
+                    <div>
+                        <div class="w-12 h-12 rounded-full bg-accent-3/20 flex items-center justify-center mx-auto mb-2 text-lg">📊</div>
+                        <p class="text-xs font-bold text-accent-3">Week 2</p>
+                        <p class="text-[10px] text-text-muted mt-1">Optimize + Iterate + A/B Results</p>
+                    </div>
+                    <div>
+                        <div class="w-12 h-12 rounded-full bg-accent-1/20 flex items-center justify-center mx-auto mb-2 text-lg">📞</div>
+                        <p class="text-xs font-bold text-accent-1">End</p>
+                        <p class="text-[10px] text-text-muted mt-1">Sprint Review + Retro + Next Plan</p>
+                    </div>
+                </div>
+            </div>
+            <div class="grid grid-cols-3 gap-4 mt-5">
+                <div class="bg-glass-bg backdrop-blur-xl border border-glass-border rounded-xl p-4 text-center hover:-translate-y-1 transition reveal">
+                    <p class="text-2xl font-bold text-accent-1 stat-glow" data-count="48" data-suffix="h">0h</p>
+                    <p class="text-xs text-text-muted mt-1">Max Response Time</p>
+                </div>
+                <div class="bg-glass-bg backdrop-blur-xl border border-glass-border rounded-xl p-4 text-center hover:-translate-y-1 transition reveal">
+                    <p class="text-2xl font-bold text-accent-2 stat-glow" data-count="14" data-suffix=" days">0 days</p>
+                    <p class="text-xs text-text-muted mt-1">Sprint Duration</p>
+                </div>
+                <div class="bg-glass-bg backdrop-blur-xl border border-glass-border rounded-xl p-4 text-center hover:-translate-y-1 transition reveal">
+                    <p class="text-2xl font-bold text-accent-3 stat-glow" data-count="5" data-suffix=" calls">0 calls</p>
+                    <p class="text-xs text-text-muted mt-1">Weekly Touchpoints</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 9: Phase 4 — Measure & Optimize -->
+    <div class="slide slide-9" data-slide="9">
+        <div class="gradient-mesh">
+            <div class="blob" style="width:400px;height:400px;top:-80px;left:-60px;background:var(--color-accent-1);opacity:0.08;"></div>
+            <div class="blob" style="width:250px;height:250px;bottom:-50px;right:-40px;background:var(--color-accent-3);opacity:0.06;"></div>
+        </div>
+        <div class="content">
+            <div class="flex items-center gap-3 mb-2 reveal">
+                <span class="phase-badge bg-accent-1/20 text-accent-1">Phase 4</span>
+                <span class="text-text-muted text-sm">Week 6-10 · Duration: 4 Weeks</span>
+            </div>
+            <h2 class="font-display text-[clamp(1.8rem,4vw,2.6rem)] font-bold mb-6 reveal">📊 Measure & Optimize</h2>
+            <div class="grid grid-cols-2 gap-5">
+                <div class="reveal">
+                    <div class="flow-step">
+                        <div class="flow-dot">1</div>
+                        <p class="font-semibold text-accent-1 text-sm">30-Day Performance Review</p>
+                        <p class="text-text-muted text-xs mt-1">تحليل شامل لأول 30 يوم: CAC، LTV، ROAS، Conversion Rate</p>
+                    </div>
+                    <div class="flow-step mt-4">
+                        <div class="flow-dot">2</div>
+                        <p class="font-semibold text-accent-1 text-sm">Data-Driven Optimization</p>
+                        <p class="text-text-muted text-xs mt-1">تعديل الحملات بناءً على البيانات — kill losers، scale winners</p>
+                    </div>
+                    <div class="flow-step mt-4">
+                        <div class="flow-dot">3</div>
+                        <p class="font-semibold text-accent-1 text-sm">Funnel Leak Analysis</p>
+                        <p class="text-text-muted text-xs mt-1">تحديد أماكن فقدان العملاء في الـ funnel + حلول فورية</p>
+                    </div>
+                </div>
+                <div class="reveal">
+                    <div class="flow-step">
+                        <div class="flow-dot" style="background:var(--color-accent-3);box-shadow:0 0 12px rgba(38,198,218,0.5);">4</div>
+                        <p class="font-semibold text-accent-3 text-sm">A/B Testing Framework</p>
+                        <p class="text-text-muted text-xs mt-1">3-5 تجارب متوازية كل أسبوعين — landing pages، ads، CTAs</p>
+                    </div>
+                    <div class="flow-step mt-4">
+                        <div class="flow-dot" style="background:var(--color-accent-3);box-shadow:0 0 12px rgba(38,198,218,0.5);">5</div>
+                        <p class="font-semibold text-accent-3 text-sm">Outcome Ledger Update</p>
+                        <p class="text-text-muted text-xs mt-1">تحديث الـ Ledger بالنتائج الفعلية vs المتوقعة — شفافية كاملة</p>
+                    </div>
+                    <div class="flow-step mt-4">
+                        <div class="flow-dot" style="background:var(--color-accent-3);box-shadow:0 0 12px rgba(38,198,218,0.5);">6</div>
+                        <p class="font-semibold text-accent-3 text-sm">QBR Preparation</p>
+                        <p class="text-text-muted text-xs mt-1">تجهيز Quarterly Business Review مع insights وتوصيات</p>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-5 bg-glass-bg backdrop-blur-xl border border-glass-border rounded-lg p-3 reveal">
+                <p class="text-xs text-text-muted">📋 <strong class="text-accent-1">Deliverable:</strong> Monthly Performance Report + Optimization Log + Updated Roadmap + QBR Deck</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 10: Phase 4 — Metrics Dashboard -->
+    <div class="slide slide-10" data-slide="10">
+        <div class="gradient-mesh">
+            <div class="blob" style="width:300px;height:300px;top:-60px;right:-50px;background:var(--color-accent-1);opacity:0.07;"></div>
+            <div class="blob" style="width:200px;height:200px;bottom:-40px;left:-30px;background:var(--color-accent-2);opacity:0.05;"></div>
+        </div>
+        <div class="content">
+            <div class="flex items-center gap-3 mb-2 reveal">
+                <span class="phase-badge bg-accent-1/20 text-accent-1">Phase 4</span>
+                <span class="text-text-muted text-sm">KPI Tracking System</span>
+            </div>
+            <h2 class="font-display text-[clamp(1.6rem,3.5vw,2.2rem)] font-bold mb-5 reveal">What We Track & Report</h2>
+            <div class="space-y-3">
+                <div class="reveal">
+                    <div class="flex justify-between text-sm mb-1"><span class="text-text-secondary">Customer Acquisition Cost (CAC)</span><span class="text-accent-1 font-bold">Target: -30%</span></div>
+                    <div class="w-full h-6 bg-glass-bg rounded-full overflow-hidden border border-glass-border"><div class="bar-fill bg-gradient-to-r from-accent-1 to-accent-3" data-width="75" style="width:0%;"></div></div>
+                </div>
+                <div class="reveal">
+                    <div class="flex justify-between text-sm mb-1"><span class="text-text-secondary">Return on Ad Spend (ROAS)</span><span class="text-accent-2 font-bold">Target: 4x+</span></div>
+                    <div class="w-full h-6 bg-glass-bg rounded-full overflow-hidden border border-glass-border"><div class="bar-fill bg-gradient-to-r from-accent-2 to-accent-1" data-width="65" style="width:0%;"></div></div>
+                </div>
+                <div class="reveal">
+                    <div class="flex justify-between text-sm mb-1"><span class="text-text-secondary">Conversion Rate Optimization</span><span class="text-accent-3 font-bold">Target: +50%</span></div>
+                    <div class="w-full h-6 bg-glass-bg rounded-full overflow-hidden border border-glass-border"><div class="bar-fill bg-gradient-to-r from-accent-3 to-accent-2" data-width="60" style="width:0%;"></div></div>
+                </div>
+                <div class="reveal">
+                    <div class="flex justify-between text-sm mb-1"><span class="text-text-secondary">Monthly Recurring Revenue (MRR)</span><span class="text-accent-1 font-bold">Target: +40%</span></div>
+                    <div class="w-full h-6 bg-glass-bg rounded-full overflow-hidden border border-glass-border"><div class="bar-fill bg-gradient-to-r from-accent-1 to-accent-2" data-width="55" style="width:0%;"></div></div>
+                </div>
+                <div class="reveal">
+                    <div class="flex justify-between text-sm mb-1"><span class="text-text-secondary">Net Promoter Score (NPS)</span><span class="text-accent-2 font-bold">Target: 50+</span></div>
+                    <div class="w-full h-6 bg-glass-bg rounded-full overflow-hidden border border-glass-border"><div class="bar-fill bg-gradient-to-r from-accent-2 to-accent-3" data-width="70" style="width:0%;"></div></div>
+                </div>
+            </div>
+            <div class="mt-4 bg-glass-bg backdrop-blur-xl border border-accent-1/20 rounded-lg p-3 reveal">
+                <p class="text-sm font-semibold text-accent-1 mb-1">🎯 Milestone Gate: QBR Sign-Off</p>
+                <p class="text-xs text-text-muted">لو الأرقام تحت الـ target بـ 20%+ — نراجع الاستراتيجية بالكامل مع العميل مجاناً</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 11: Phase 5 — Scale & Expand -->
+    <div class="slide slide-11" data-slide="11">
+        <div class="gradient-mesh">
+            <div class="blob" style="width:400px;height:400px;top:-80px;right:-60px;background:var(--color-accent-2);opacity:0.08;"></div>
+            <div class="blob" style="width:250px;height:250px;bottom:-50px;left:-40px;background:var(--color-accent-3);opacity:0.06;"></div>
+        </div>
+        <div class="content">
+            <div class="flex items-center gap-3 mb-2 reveal">
+                <span class="phase-badge bg-accent-2/20 text-accent-2">Phase 5</span>
+                <span class="text-text-muted text-sm">Month 3-6 · Duration: Ongoing</span>
+            </div>
+            <h2 class="font-display text-[clamp(1.8rem,4vw,2.6rem)] font-bold mb-6 reveal">⚡ Scale & Expand</h2>
+            <div class="grid grid-cols-2 gap-5">
+                <div class="reveal">
+                    <div class="flow-step">
+                        <div class="flow-dot" style="background:var(--color-accent-2);box-shadow:0 0 12px rgba(255,213,79,0.5);">1</div>
+                        <p class="font-semibold text-accent-2 text-sm">Growth Audit — What's Working</p>
+                        <p class="text-text-muted text-xs mt-1">تحديد أعلى القنوات أداءً + مضاعفة الميزانية عليها</p>
+                    </div>
+                    <div class="flow-step mt-4">
+                        <div class="flow-dot" style="background:var(--color-accent-2);box-shadow:0 0 12px rgba(255,213,79,0.5);">2</div>
+                        <p class="font-semibold text-accent-2 text-sm">New Market Expansion</p>
+                        <p class="text-text-muted text-xs mt-1">دخول أسواق جديدة: جغرافية (KSA، UAE) أو segments جديدة</p>
+                    </div>
+                    <div class="flow-step mt-4">
+                        <div class="flow-dot" style="background:var(--color-accent-2);box-shadow:0 0 12px rgba(255,213,79,0.5);">3</div>
+                        <p class="font-semibold text-accent-2 text-sm">Advanced Automation Build</p>
+                        <p class="text-text-muted text-xs mt-1">AI-powered lead scoring، predictive analytics، personalization</p>
+                    </div>
+                </div>
+                <div class="reveal">
+                    <div class="flow-step">
+                        <div class="flow-dot" style="background:var(--color-accent-2);box-shadow:0 0 12px rgba(255,213,79,0.5);">4</div>
+                        <p class="font-semibold text-accent-2 text-sm">Partnership & Channel Dev</p>
+                        <p class="text-text-muted text-xs mt-1">بناء شراكات استراتيجية + affiliate/referral programs</p>
+                    </div>
+                    <div class="flow-step mt-4">
+                        <div class="flow-dot" style="background:var(--color-accent-2);box-shadow:0 0 12px rgba(255,213,79,0.5);">5</div>
+                        <p class="font-semibold text-accent-2 text-sm">Team & Process Handover</p>
+                        <p class="text-text-muted text-xs mt-1">تدريب الفريق الداخلي + نقل المعرفة + SOPs كاملة</p>
+                    </div>
+                    <div class="flow-step mt-4">
+                        <div class="flow-dot" style="background:var(--color-accent-2);box-shadow:0 0 12px rgba(255,213,79,0.5);">6</div>
+                        <p class="font-semibold text-accent-2 text-sm">Scale Strategy Review</p>
+                        <p class="text-text-muted text-xs mt-1">مراجعة استراتيجية التوسع + تحديد المرحلة القادمة</p>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-5 bg-glass-bg backdrop-blur-xl border border-glass-border rounded-lg p-3 reveal">
+                <p class="text-xs text-text-muted">📋 <strong class="text-accent-2">Deliverable:</strong> Expansion Playbook + Market Entry Plan + SOPs + Training Materials</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 12: Phase 6 — Retain & Iterate -->
+    <div class="slide slide-12" data-slide="12">
+        <div class="gradient-mesh">
+            <div class="blob" style="width:350px;height:350px;top:-70px;left:-60px;background:var(--color-accent-3);opacity:0.08;"></div>
+            <div class="blob" style="width:250px;height:250px;bottom:-50px;right:-40px;background:var(--color-accent-1);opacity:0.06;"></div>
+        </div>
+        <div class="content">
+            <div class="flex items-center gap-3 mb-2 reveal">
+                <span class="phase-badge bg-accent-3/20 text-accent-3">Phase 6</span>
+                <span class="text-text-muted text-sm">Ongoing · Continuous Improvement</span>
+            </div>
+            <h2 class="font-display text-[clamp(1.8rem,4vw,2.6rem)] font-bold mb-6 reveal">🔄 Retain & Iterate</h2>
+            <div class="grid grid-cols-3 gap-4">
+                <div class="bg-glass-bg backdrop-blur-xl border border-glass-border rounded-xl p-5 hover:-translate-y-1 transition reveal">
+                    <div class="text-2xl mb-2">📞</div>
+                    <p class="font-bold text-accent-3 text-sm">Monthly Check-ins</p>
+                    <p class="text-text-muted text-xs mt-2">مكالمة شهرية لمراجعة الأداء + تحديد أولويات الشهر الجاي</p>
+                </div>
+                <div class="bg-glass-bg backdrop-blur-xl border border-glass-border rounded-xl p-5 hover:-translate-y-1 transition reveal">
+                    <div class="text-2xl mb-2">📊</div>
+                    <p class="font-bold text-accent-1 text-sm">Quarterly Reviews</p>
+                    <p class="text-text-muted text-xs mt-2">QBR شامل مع executive summary + strategic recommendations</p>
+                </div>
+                <div class="bg-glass-bg backdrop-blur-xl border border-glass-border rounded-xl p-5 hover:-translate-y-1 transition reveal">
+                    <div class="text-2xl mb-2">🔬</div>
+                    <p class="font-bold text-accent-2 text-sm">Innovation Sprints</p>
+                    <p class="text-text-muted text-xs mt-2">تجارب جديدة كل ربع — AI tools، new channels، growth hacks</p>
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-4 mt-4">
+                <div class="bg-glass-bg backdrop-blur-xl border border-l-4 border-accent-3 rounded-xl p-4 hover:-translate-y-1 transition reveal">
+                    <p class="font-bold text-sm mb-1">🛡️ Retention Guarantee</p>
+                    <p class="text-text-muted text-xs">لو العميل مش راضي عن النتائج بعد 90 يوم — شهر مجاني لإصلاح الوضع</p>
+                </div>
+                <div class="bg-glass-bg backdrop-blur-xl border border-l-4 border-accent-1 rounded-xl p-4 hover:-translate-y-1 transition reveal">
+                    <p class="font-bold text-sm mb-1">📈 Growth Loop</p>
+                    <p class="text-text-muted text-xs">كل phase بتغذي اللي بعدها — بيانات Phase 4 بتحسّن Phase 3 في الدورة الجاية</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 13: Communication Protocol -->
+    <div class="slide slide-13" data-slide="13">
+        <div class="gradient-mesh">
+            <div class="blob" style="width:350px;height:350px;top:-70px;right:-60px;background:var(--color-accent-1);opacity:0.07;"></div>
+            <div class="blob" style="width:200px;height:200px;bottom:-40px;left:-30px;background:var(--color-accent-2);opacity:0.05;"></div>
+        </div>
+        <div class="content">
+            <p class="text-accent-3 uppercase tracking-[0.12em] text-sm font-semibold mb-2 reveal">Communication</p>
+            <h2 class="font-display text-[clamp(1.6rem,3.5vw,2.2rem)] font-bold mb-5 reveal">Communication & Reporting Protocol</h2>
+            <div class="grid grid-cols-2 gap-4">
+                <div class="bg-glass-bg backdrop-blur-xl border border-glass-border rounded-xl p-5 reveal">
+                    <p class="font-bold text-accent-1 text-sm mb-3">📅 Meeting Cadence</p>
+                    <div class="space-y-2 text-xs">
+                        <div class="flex justify-between border-b border-glass-border pb-1"><span class="text-text-secondary">Daily Standup (Internal)</span><span class="text-text-muted">15 min</span></div>
+                        <div class="flex justify-between border-b border-glass-border pb-1"><span class="text-text-secondary">Weekly Client Check-in</span><span class="text-text-muted">30 min</span></div>
+                        <div class="flex justify-between border-b border-glass-border pb-1"><span class="text-text-secondary">Bi-Weekly Sprint Review</span><span class="text-text-muted">45 min</span></div>
+                        <div class="flex justify-between border-b border-glass-border pb-1"><span class="text-text-secondary">Monthly Performance Call</span><span class="text-text-muted">60 min</span></div>
+                        <div class="flex justify-between"><span class="text-text-secondary">Quarterly Business Review</span><span class="text-text-muted">90 min</span></div>
+                    </div>
+                </div>
+                <div class="bg-glass-bg backdrop-blur-xl border border-glass-border rounded-xl p-5 reveal">
+                    <p class="font-bold text-accent-2 text-sm mb-3">📊 Report Types</p>
+                    <div class="space-y-2 text-xs">
+                        <div class="flex justify-between border-b border-glass-border pb-1"><span class="text-text-secondary">Real-Time Dashboard</span><span class="text-accent-3">24/7 Access</span></div>
+                        <div class="flex justify-between border-b border-glass-border pb-1"><span class="text-text-secondary">Weekly Snapshot Report</span><span class="text-accent-3">Every Friday</span></div>
+                        <div class="flex justify-between border-b border-glass-border pb-1"><span class="text-text-secondary">Monthly Deep-Dive Report</span><span class="text-accent-3">1st of Month</span></div>
+                        <div class="flex justify-between border-b border-glass-border pb-1"><span class="text-text-secondary">Sprint Completion Report</span><span class="text-accent-3">Bi-Weekly</span></div>
+                        <div class="flex justify-between"><span class="text-text-secondary">QBR Executive Deck</span><span class="text-accent-3">Quarterly</span></div>
+                    </div>
+                </div>
+            </div>
+            <div class="grid grid-cols-3 gap-3 mt-4">
+                <div class="bg-glass-bg backdrop-blur-xl border border-glass-border rounded-lg p-3 text-center reveal">
+                    <p class="text-lg">💬</p>
+                    <p class="text-xs font-semibold mt-1">Slack Channel</p>
+                    <p class="text-[10px] text-text-muted">Dedicated + Async</p>
+                </div>
+                <div class="bg-glass-bg backdrop-blur-xl border border-glass-border rounded-lg p-3 text-center reveal">
+                    <p class="text-lg">📋</p>
+                    <p class="text-xs font-semibold mt-1">ClickUp Board</p>
+                    <p class="text-[10px] text-text-muted">Full Transparency</p>
+                </div>
+                <div class="bg-glass-bg backdrop-blur-xl border border-glass-border rounded-lg p-3 text-center reveal">
+                    <p class="text-lg">🎥</p>
+                    <p class="text-xs font-semibold mt-1">Loom Updates</p>
+                    <p class="text-[10px] text-text-muted">Async Video Briefs</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 14: MilestoneX Guarantee -->
+    <div class="slide slide-14" data-slide="14">
+        <div class="gradient-mesh">
+            <div class="blob" style="width:400px;height:400px;top:-80px;left:-60px;background:var(--color-accent-1);opacity:0.08;"></div>
+            <div class="blob" style="width:300px;height:300px;bottom:-60px;right:-40px;background:var(--color-accent-2);opacity:0.07;"></div>
+        </div>
+        <canvas class="particle-canvas-ambient" style="position:absolute;inset:0;z-index:1;"></canvas>
+        <div class="content">
+            <p class="text-accent-1 uppercase tracking-[0.12em] text-sm font-semibold mb-2 reveal">MilestoneX Engine</p>
+            <h2 class="font-display text-[clamp(1.6rem,3.5vw,2.2rem)] font-bold mb-5 reveal">The Guarantee System</h2>
+            <div class="grid grid-cols-2 gap-4">
+                <div class="bg-glass-bg backdrop-blur-xl border border-l-4 border-accent-1 rounded-xl p-5 hover:-translate-y-1 transition reveal">
+                    <p class="font-bold text-sm mb-2">🎯 Milestone Gates</p>
+                    <p class="text-text-muted text-xs">كل phase بيها gate — لازم يتحقق قبل الانتقال. لو مش متحقق → خطة إصلاح فورية مجانية</p>
+                </div>
+                <div class="bg-glass-bg backdrop-blur-xl border border-l-4 border-accent-2 rounded-xl p-5 hover:-translate-y-1 transition reveal">
+                    <p class="font-bold text-sm mb-2">💰 Pay-for-Performance</p>
+                    <p class="text-text-muted text-xs">جزء من الفلوس مرتبط بتحقيق الـ milestones — لو ما اتحققوش، مش بنقبض كامل</p>
+                </div>
+                <div class="bg-glass-bg backdrop-blur-xl border border-l-4 border-accent-3 rounded-xl p-5 hover:-translate-y-1 transition reveal">
+                    <p class="font-bold text-sm mb-2">📖 Outcome Ledger</p>
+                    <p class="text-text-muted text-xs">سجل شفاف لكل milestone + النتيجة الفعلية + السبب لو اختلف عن المتوقع</p>
+                </div>
+                <div class="bg-glass-bg backdrop-blur-xl border border-l-4 border-accent-1 rounded-xl p-5 hover:-translate-y-1 transition reveal">
+                    <p class="font-bold text-sm mb-2">🛡️ SLA Protection</p>
+                    <p class="text-text-muted text-xs">Response time محدد + escalation path واضح + dedicated account manager</p>
+                </div>
+            </div>
+            <div class="mt-5 bg-accent-1/10 border border-accent-1/30 rounded-xl p-4 text-center reveal">
+                <p class="text-lg font-bold text-accent-1 glow-pulse">فلوسك في أمان — أداؤنا مرتبط بنتائجك</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 15: Thank You -->
+    <div class="slide slide-15" data-slide="15">
+        <div class="gradient-mesh">
+            <div class="blob" style="width:500px;height:500px;top:-100px;right:-100px;background:var(--color-accent-1);opacity:0.15;"></div>
+            <div class="blob" style="width:350px;height:350px;bottom:-80px;left:-60px;background:var(--color-accent-2);opacity:0.12;"></div>
+            <div class="blob" style="width:200px;height:200px;top:40%;left:15%;background:var(--color-accent-3);opacity:0.1;"></div>
+        </div>
+        <canvas class="particle-canvas" style="position:absolute;inset:0;z-index:1;"></canvas>
+        <div class="content text-center">
+            <div class="text-[100px] mb-4 animate-[float_3s_ease-in-out_infinite]">🚀</div>
+            <h2 class="font-display text-[clamp(2.5rem,6vw,4.5rem)] font-black bg-linear-to-br from-accent-1 via-accent-2 to-accent-1 bg-clip-text text-transparent tracking-tight mb-4 reveal">Ready to Hunt?</h2>
+            <p class="text-[clamp(0.9rem,1.5vw,1.4rem)] font-light text-text-muted tracking-[6px] uppercase mb-6 reveal">LET'S BUILD YOUR GROWTH ENGINE</p>
+            <div class="flex gap-4 justify-center reveal">
+                <div class="bg-glass-bg backdrop-blur-xl border border-glass-border rounded-full px-6 py-3">
+                    <p class="text-sm">📧 hello@huntersgrowth.com</p>
+                </div>
+                <div class="bg-glass-bg backdrop-blur-xl border border-glass-border rounded-full px-6 py-3">
+                    <p class="text-sm">🌐 huntersgrowth.com</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- NAVIGATION -->
+<div class="nav-controls">
+    <button class="nav-btn" onclick="changeSlide(-1)">&#8249;</button>
+    <div class="slide-dots" id="dots"></div>
+    <button class="nav-btn" onclick="changeSlide(1)">&#8250;</button>
+    <span class="slide-counter" id="counter">1 / 15</span>
+</div>
+
+<script>
+    let current = 1;
+    const total = document.querySelectorAll('.slide').length;
+    const dotsContainer = document.getElementById('dots');
+    const counter = document.getElementById('counter');
+    for (let i = 1; i <= total; i++) { const dot = document.createElement('div'); dot.className = 'dot' + (i === 1 ? ' active' : ''); dot.onclick = () => goToSlide(i); dotsContainer.appendChild(dot); }
+    function goToSlide(n) {
+        const prev = document.querySelector('.slide.active');
+        const next = document.querySelector(`.slide[data-slide="${n}"]`);
+        if (prev) prev.classList.remove('active');
+        if (next) { next.classList.add('active'); try { animateSlide(next); } catch(e) { console.warn('Motion unavailable:', e); } }
+        current = n; updateNav();
+    }
+    function changeSlide(dir) { let next = current + dir; if (next < 1) next = total; if (next > total) next = 1; goToSlide(next); }
+    function updateNav() { document.querySelectorAll('.dot').forEach((d, i) => { d.classList.toggle('active', i + 1 === current); }); counter.textContent = current + ' / ' + total; }
+    document.addEventListener('keydown', (e) => { if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); changeSlide(1); } if (e.key === 'ArrowLeft') { e.preventDefault(); changeSlide(-1); } });
+    let touchStartX = 0;
+    document.addEventListener('touchstart', (e) => { touchStartX = e.touches[0].clientX; });
+    document.addEventListener('touchend', (e) => { const diff = touchStartX - e.changedTouches[0].clientX; if (Math.abs(diff) > 50) changeSlide(diff > 0 ? 1 : -1); });
+
+    function animateSlide(slide) {
+        slide.querySelectorAll('.reveal').forEach((el, i) => {
+            el.style.opacity = '0'; el.style.transform = 'translateY(20px)';
+            Motion.animate(el, { opacity: 1, transform: 'translateY(0px)' }, { type: 'spring', stiffness: 200, damping: 30, delay: i * 0.12 });
+        });
+        animateSlideEffects(slide);
+    }
+
+    function animateSlideEffects(slide) {
+        slide.querySelectorAll('[data-count]:not(.counted)').forEach(el => {
+            el.classList.add('counted');
+            const target = parseInt(el.dataset.count);
+            const suffix = el.dataset.suffix || '', prefix = el.dataset.prefix || '';
+            let cur = 0; const step = target / 40;
+            const timer = setInterval(() => { cur += step; if (cur >= target) { cur = target; clearInterval(timer); } el.textContent = prefix + Math.round(cur).toLocaleString() + suffix; }, 30);
+        });
+        slide.querySelectorAll('.bar-fill:not(.fill-init)').forEach((bar, i) => {
+            bar.classList.add('fill-init');
+            Motion.animate(bar, { width: bar.dataset.width + '%' }, { type: 'spring', stiffness: 100, damping: 20, delay: i * 0.1 });
+        });
+        slide.querySelectorAll('.donut-ring:not(.ring-init)').forEach(ring => {
+            ring.classList.add('ring-init');
+            Motion.animate(ring, { strokeDashoffset: 251.3 - (parseInt(ring.dataset.percent) / 100) * 251.3 }, { duration: 1.2, easing: [0.16, 1, 0.3, 1] });
+        });
+    }
+
+    document.addEventListener('mousemove', (e) => {
+        const spotlight = document.querySelector('.mouse-spotlight');
+        if (spotlight) {
+            const rgb = getComputedStyle(document.documentElement).getPropertyValue('--glow-color-rgb').trim() || '56,189,248';
+            spotlight.style.background = `radial-gradient(600px circle at ${e.clientX}px ${e.clientY}px, rgba(${rgb}, 0.06), transparent 40%)`;
+        }
+    });
+
+    (function() {
+        let mouseX = window.innerWidth / 2, mouseY = window.innerHeight / 2;
+        const cx = window.innerWidth / 2, cy = window.innerHeight / 2;
+        document.addEventListener('mousemove', (e) => { mouseX = e.clientX; mouseY = e.clientY; });
+        (function tick() {
+            const ox = (mouseX - cx) / cx, oy = (mouseY - cy) / cy;
+            document.querySelectorAll('.deco-shape').forEach(shape => {
+                const speed = parseFloat(shape.dataset.speed) || 0.03;
+                shape.style.transform = `translate(${ox * speed * 100}px, ${oy * speed * 100}px)`;
+            });
+            requestAnimationFrame(tick);
+        })();
+    })();
+
+    window.initParticles = function(canvas, options) {
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight;
+        const interactive = options.interactive !== false;
+        const count = options.count || (interactive ? 55 : 18);
+        let mx = -1000, my = -1000;
+        const rgb = getComputedStyle(document.documentElement).getPropertyValue('--glow-color-rgb').trim() || '56,189,248';
+        const [r, g, b] = rgb.split(',').map(Number);
+        const particles = Array.from({ length: count }, () => ({
+            x: Math.random() * canvas.width, y: Math.random() * canvas.height,
+            vx: (Math.random() - 0.5) * 0.3, vy: (Math.random() - 0.5) * 0.3,
+            size: Math.random() * 2.5 + 0.8, alpha: Math.random() * 0.35 + 0.1
+        }));
+        if (interactive) {
+            canvas.addEventListener('mousemove', (e) => { const rect = canvas.getBoundingClientRect(); mx = e.clientX - rect.left; my = e.clientY - rect.top; });
+            canvas.addEventListener('mouseleave', () => { mx = -1000; my = -1000; });
+        }
+        (function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(p => {
+                if (interactive) { const dx = p.x - mx, dy = p.y - my, dist = Math.sqrt(dx * dx + dy * dy); if (dist < 120) { const force = (120 - dist) / 120 * 2; p.vx += (dx / dist) * force * 0.1; p.vy += (dy / dist) * force * 0.1; } }
+                p.vx *= 0.98; p.vy *= 0.98; p.x += p.vx; p.y += p.vy;
+                if (p.x < 0) p.x = canvas.width; if (p.x > canvas.width) p.x = 0;
+                if (p.y < 0) p.y = canvas.height; if (p.y > canvas.height) p.y = 0;
+                ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(${r},${g},${b},${p.alpha})`; ctx.fill();
+            });
+            requestAnimationFrame(animate);
+        })();
+    };
+    document.querySelectorAll('.particle-canvas').forEach(c => window.initParticles(c, { interactive: true, count: 55 }));
+    document.querySelectorAll('.particle-canvas-ambient').forEach(c => window.initParticles(c, { interactive: false, count: 18 }));
+
+    animateSlide(document.querySelector('.slide.active'));
+</script>
+
+</body>
+</html>

@@ -1,0 +1,681 @@
+{
+  "name": "Growth Hunters — Complete Client Growth Workflow",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "trigger-001",
+      "name": "🚀 New Client Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [120, 400],
+      "notes": "يبدأ الـ workflow عند إضافة عميل جديد"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "new-client",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-001",
+      "name": "📥 Client Onboarding Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [120, 560],
+      "notes": "يستقبل بيانات العميل الجديد من النموذج"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            { "name": "clientName", "value": "={{ $json.client_name }}" },
+            { "name": "clientEmail", "value": "={{ $json.client_email }}" },
+            { "name": "industry", "value": "={{ $json.industry }}" },
+            { "name": "budget", "value": "={{ $json.monthly_budget }}" },
+            { "name": "startDate", "value": "={{ $now.toISO() }}" },
+            { "name": "phase", "value": "Phase 1 - Discovery" },
+            { "name": "projectId", "value": "=GH-{{ $now.format('YYYYMMDD') }}-{{ $json.client_name.replace(' ','').slice(0,4).toUpperCase() }}" }
+          ]
+        }
+      },
+      "id": "set-001",
+      "name": "⚙️ Set Client Variables",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3,
+      "position": [360, 480]
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "resource": "contact",
+        "properties": {
+          "email": "={{ $json.clientEmail }}",
+          "firstname": "={{ $json.clientName.split(' ')[0] }}",
+          "lastname": "={{ $json.clientName.split(' ').slice(1).join(' ') }}",
+          "company": "={{ $json.industry }}",
+          "hs_lead_status": "IN_PROGRESS",
+          "lifecyclestage": "customer"
+        }
+      },
+      "id": "hubspot-001",
+      "name": "🔗 Create CRM Contact",
+      "type": "n8n-nodes-base.hubspot",
+      "typeVersion": 2,
+      "position": [600, 340],
+      "notes": "إضافة العميل في HubSpot CRM"
+    },
+    {
+      "parameters": {
+        "resource": "task",
+        "operation": "create",
+        "name": "=🔍 Discovery & Audit — {{ $json.clientName }}",
+        "description": "=**Phase 1 — Week 1**\n\n✅ Onboarding Call (60 min)\n✅ Business Audit Questionnaire (15 questions)\n✅ Tech Stack & Channel Audit\n✅ Competitor Deep Dive (3-5 competitors)\n✅ ICP & Persona Mapping\n✅ Discovery Report Delivery\n\n**Client:** {{ $json.clientName }}\n**Budget:** {{ $json.budget }}\n**Project ID:** {{ $json.projectId }}",
+        "dueDate": "={{ $now.plus({days: 7}).toISO() }}",
+        "priority": 2
+      },
+      "id": "clickup-001",
+      "name": "📋 Phase 1: Discovery Task",
+      "type": "n8n-nodes-base.clickUp",
+      "typeVersion": 1,
+      "position": [600, 480],
+      "notes": "إنشاء مهمة الـ Discovery في ClickUp"
+    },
+    {
+      "parameters": {
+        "resource": "task",
+        "operation": "create",
+        "name": "=📐 Strategy & Blueprint — {{ $json.clientName }}",
+        "description": "=**Phase 2 — Week 2-3**\n\n✅ Growth Strategy Document\n✅ Channel Mix Recommendation\n✅ 90-Day Roadmap\n✅ KPI Framework & OKRs\n✅ Budget Waterfall Planning\n✅ Sprint Calendar Setup\n\n**Milestone Gate:** Blueprint Sign-Off required before Phase 3",
+        "dueDate": "={{ $now.plus({days: 21}).toISO() }}",
+        "priority": 2
+      },
+      "id": "clickup-002",
+      "name": "📋 Phase 2: Strategy Task",
+      "type": "n8n-nodes-base.clickUp",
+      "typeVersion": 1,
+      "position": [600, 600],
+      "notes": "إنشاء مهمة الـ Strategy & Blueprint"
+    },
+    {
+      "parameters": {
+        "fromEmail": "growth@huntersgrowth.com",
+        "toEmail": "={{ $json.clientEmail }}",
+        "subject": "=🚀 Welcome to Hunters Growth, {{ $json.clientName.split(' ')[0] }}! — {{ $json.projectId }}",
+        "emailType": "html",
+        "message": "=<!DOCTYPE html><html><body style='font-family:Inter,sans-serif;background:#0a0f1e;color:#e8edf5;max-width:600px;margin:0 auto;padding:40px 20px;'><div style='text-align:center;margin-bottom:40px;'><div style='font-size:48px;'>🎯</div><h1 style='background:linear-gradient(135deg,#8BC34A,#FFD54F);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-size:2rem;'>Hunters Growth</h1></div><h2 style='color:#8BC34A;'>Welcome aboard, {{ $json.clientName.split(' ')[0] }}!</h2><p style='color:#c0c0d0;line-height:1.7;'>نحن متحمسون للعمل معك وتحقيق نمو حقيقي وقابل للقياس لأعمالك.</p><div style='background:rgba(139,195,74,0.1);border:1px solid rgba(139,195,74,0.3);border-radius:12px;padding:20px;margin:24px 0;'><h3 style='color:#8BC34A;margin-top:0;'>📋 What Happens Next:</h3><ol style='color:#c0c0d0;line-height:2;'><li>Onboarding Call — سيتصل بك فريقنا خلال 24 ساعة</li><li>Business Audit Questionnaire — 15 سؤال لفهم أعمالك</li><li>Discovery Report — خلال 7 أيام</li></ol></div><div style='background:rgba(255,213,79,0.1);border:1px solid rgba(255,213,79,0.3);border-radius:12px;padding:16px;margin:24px 0;'><p style='color:#FFD54F;margin:0;font-weight:600;'>🆔 Project ID: {{ $json.projectId }}</p><p style='color:#c0c0d0;margin:8px 0 0;font-size:0.9em;'>احفظ هذا الرمز للرجوع إليه في أي وقت</p></div><div style='text-align:center;margin-top:32px;'><a href='https://wa.me/201113903070' style='background:linear-gradient(135deg,#8BC34A,#26C6DA);color:#0f0f14;padding:14px 32px;border-radius:50px;text-decoration:none;font-weight:700;display:inline-block;'>💬 Chat on WhatsApp</a></div></body></html>"
+      },
+      "id": "email-001",
+      "name": "📧 Welcome Email to Client",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2,
+      "position": [840, 340]
+    },
+    {
+      "parameters": {
+        "channel": "new-clients",
+        "text": "=🎯 *NEW CLIENT ONBOARDED!*\n\n*Client:* {{ $json.clientName }}\n*Email:* {{ $json.clientEmail }}\n*Industry:* {{ $json.industry }}\n*Budget:* ${{ $json.budget }}/month\n*Project ID:* `{{ $json.projectId }}`\n*Start Date:* {{ $now.format('DD MMM YYYY') }}\n\n📋 *Tasks Created:*\n✅ Phase 1: Discovery & Audit (Due: 7 days)\n✅ Phase 2: Strategy & Blueprint (Due: 21 days)\n\n🔥 *Action Required:* Schedule onboarding call ASAP!",
+        "otherOptions": {
+          "icon_emoji": ":rocket:",
+          "username": "Growth Hunters Bot"
+        }
+      },
+      "id": "slack-001",
+      "name": "💬 Slack: Team Notification",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2,
+      "position": [840, 480],
+      "notes": "إشعار الفريق في Slack"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "hours", "hoursInterval": 24 }]
+        }
+      },
+      "id": "schedule-001",
+      "name": "⏰ Daily Check Scheduler",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [120, 800],
+      "notes": "فحص يومي لحالة المشاريع"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "resource": "task",
+        "filters": {
+          "status": ["In Progress", "To Do"],
+          "dueDate": { "lt": "={{ $now.plus({days: 2}).toISO() }}" }
+        }
+      },
+      "id": "clickup-003",
+      "name": "📊 Check Overdue Tasks",
+      "type": "n8n-nodes-base.clickUp",
+      "typeVersion": 1,
+      "position": [360, 800]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.tasks.length }}",
+              "rightValue": 0,
+              "operator": { "type": "number", "operation": "gt" }
+            }
+          ]
+        }
+      },
+      "id": "if-001",
+      "name": "🔀 Has Overdue Tasks?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [600, 800]
+    },
+    {
+      "parameters": {
+        "channel": "alerts",
+        "text": "=⚠️ *OVERDUE TASKS ALERT*\n\n{{ $json.tasks.map(t => `• ${t.name} — Due: ${t.due_date}`).join('\\n') }}\n\n🚨 Take action immediately!",
+        "otherOptions": { "icon_emoji": ":warning:" }
+      },
+      "id": "slack-002",
+      "name": "🚨 Slack: Overdue Alert",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2,
+      "position": [840, 720]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "weeks", "weeksInterval": 1, "triggerAtDay": [5] }]
+        }
+      },
+      "id": "schedule-002",
+      "name": "📅 Weekly Report Scheduler",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [120, 1000],
+      "notes": "تقرير أسبوعي كل جمعة"
+    },
+    {
+      "parameters": {
+        "url": "https://analytics.googleapis.com/v4/properties/{{ $env.GA4_PROPERTY_ID }}/runReport",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleApi",
+        "method": "POST",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "dateRanges",
+              "value": "=[{\"startDate\":\"7daysAgo\",\"endDate\":\"today\"}]"
+            },
+            {
+              "name": "metrics",
+              "value": "=[{\"name\":\"sessions\"},{\"name\":\"conversions\"},{\"name\":\"totalRevenue\"}]"
+            }
+          ]
+        }
+      },
+      "id": "http-001",
+      "name": "📈 Fetch GA4 Analytics",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [360, 1000],
+      "notes": "جلب بيانات Google Analytics"
+    },
+    {
+      "parameters": {
+        "url": "https://graph.facebook.com/v18.0/act_{{ $env.META_AD_ACCOUNT_ID }}/insights",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "facebookGraphApi",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "fields", "value": "spend,impressions,clicks,conversions,cpc,roas" },
+            { "name": "date_preset", "value": "last_7d" }
+          ]
+        }
+      },
+      "id": "http-002",
+      "name": "📢 Fetch Meta Ads Data",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [360, 1100],
+      "notes": "جلب بيانات Meta Ads"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combinationMode": "mergeByPosition",
+        "options": {}
+      },
+      "id": "merge-001",
+      "name": "🔀 Merge Analytics Data",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [600, 1050]
+    },
+    {
+      "parameters": {
+        "jsCode": "const ga4 = $input.all()[0]?.json || {};\nconst meta = $input.all()[1]?.json || {};\n\nconst sessions = ga4?.rows?.[0]?.metricValues?.[0]?.value || 0;\nconst conversions = ga4?.rows?.[0]?.metricValues?.[1]?.value || 0;\nconst revenue = ga4?.rows?.[0]?.metricValues?.[2]?.value || 0;\n\nconst adSpend = meta?.data?.[0]?.spend || 0;\nconst roas = adSpend > 0 ? (revenue / adSpend).toFixed(2) : 0;\nconst cac = conversions > 0 ? (adSpend / conversions).toFixed(2) : 0;\n\nreturn [{\n  json: {\n    period: '7 Days',\n    sessions: parseInt(sessions).toLocaleString(),\n    conversions: parseInt(conversions).toLocaleString(),\n    revenue: '$' + parseFloat(revenue).toFixed(0),\n    adSpend: '$' + parseFloat(adSpend).toFixed(0),\n    roas: roas + 'x',\n    cac: '$' + cac,\n    conversionRate: sessions > 0 ? ((conversions/sessions)*100).toFixed(2) + '%' : '0%',\n    reportDate: new Date().toLocaleDateString('en-GB'),\n    status: roas >= 3 ? '🟢 ON TRACK' : roas >= 2 ? '🟡 NEEDS ATTENTION' : '🔴 CRITICAL'\n  }\n}];"
+      },
+      "id": "code-001",
+      "name": "🧮 Calculate KPIs",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [840, 1050]
+    },
+    {
+      "parameters": {
+        "channel": "weekly-reports",
+        "text": "=📊 *WEEKLY PERFORMANCE REPORT*\n━━━━━━━━━━━━━━━━━━━━\n📅 Period: Last {{ $json.period }}\n📆 Generated: {{ $json.reportDate }}\n\n*🌐 Website Performance:*\n• Sessions: {{ $json.sessions }}\n• Conversions: {{ $json.conversions }}\n• Conversion Rate: {{ $json.conversionRate }}\n• Revenue: {{ $json.revenue }}\n\n*📢 Paid Media Performance:*\n• Ad Spend: {{ $json.adSpend }}\n• ROAS: {{ $json.roas }}\n• CAC: {{ $json.cac }}\n\n*Overall Status: {{ $json.status }}*\n━━━━━━━━━━━━━━━━━━━━\n📋 Full report sent via email",
+        "otherOptions": { "icon_emoji": ":bar_chart:", "username": "Growth Hunters Analytics" }
+      },
+      "id": "slack-003",
+      "name": "💬 Slack: Weekly Report",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2,
+      "position": [1080, 1050]
+    },
+    {
+      "parameters": {
+        "fromEmail": "reports@huntersgrowth.com",
+        "toEmail": "={{ $env.CLIENT_EMAILS }}",
+        "subject": "=📊 Weekly Growth Report — {{ $json.reportDate }} | {{ $json.status }}",
+        "emailType": "html",
+        "message": "=<!DOCTYPE html><html><body style='font-family:Inter,sans-serif;background:#0a0f1e;color:#e8edf5;max-width:650px;margin:0 auto;padding:40px 20px;'><div style='text-align:center;margin-bottom:32px;'><h1 style='background:linear-gradient(135deg,#8BC34A,#FFD54F,#26C6DA);-webkit-background-clip:text;-webkit-text-fill-color:transparent;'>📊 Weekly Report</h1><p style='color:#7a7a9a;'>{{ $json.reportDate }}</p></div><div style='display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;'><div style='background:rgba(139,195,74,0.1);border:1px solid rgba(139,195,74,0.3);border-radius:12px;padding:20px;text-align:center;'><p style='color:#8BC34A;font-size:2rem;font-weight:700;margin:0;'>{{ $json.roas }}</p><p style='color:#7a7a9a;margin:4px 0 0;font-size:0.85rem;'>ROAS</p></div><div style='background:rgba(255,213,79,0.1);border:1px solid rgba(255,213,79,0.3);border-radius:12px;padding:20px;text-align:center;'><p style='color:#FFD54F;font-size:2rem;font-weight:700;margin:0;'>{{ $json.conversions }}</p><p style='color:#7a7a9a;margin:4px 0 0;font-size:0.85rem;'>Conversions</p></div><div style='background:rgba(38,198,218,0.1);border:1px solid rgba(38,198,218,0.3);border-radius:12px;padding:20px;text-align:center;'><p style='color:#26C6DA;font-size:2rem;font-weight:700;margin:0;'>{{ $json.sessions }}</p><p style='color:#7a7a9a;margin:4px 0 0;font-size:0.85rem;'>Sessions</p></div><div style='background:rgba(139,195,74,0.1);border:1px solid rgba(139,195,74,0.3);border-radius:12px;padding:20px;text-align:center;'><p style='color:#8BC34A;font-size:2rem;font-weight:700;margin:0;'>{{ $json.revenue }}</p><p style='color:#7a7a9a;margin:4px 0 0;font-size:0.85rem;'>Revenue</p></div></div><div style='background:rgba(255,255,255,0.05);border-radius:12px;padding:20px;text-align:center;'><p style='font-size:1.2rem;font-weight:700;color:#8BC34A;'>{{ $json.status }}</p></div></body></html>"
+      },
+      "id": "email-002",
+      "name": "📧 Weekly Report Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2,
+      "position": [1080, 1150]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "months", "monthsInterval": 1, "triggerAtDay": [1] }]
+        }
+      },
+      "id": "schedule-003",
+      "name": "📅 Monthly Review Scheduler",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [120, 1300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Phase progression checker\nconst phases = [\n  { id: 1, name: 'Discovery & Audit', days: 7, deliverable: 'Discovery Report' },\n  { id: 2, name: 'Strategy & Blueprint', days: 21, deliverable: 'Blueprint Sign-Off' },\n  { id: 3, name: 'Launch & Execute', days: 42, deliverable: 'Live Campaigns + Dashboard' },\n  { id: 4, name: 'Measure & Optimize', days: 70, deliverable: 'Monthly Performance Report' },\n  { id: 5, name: 'Scale & Expand', days: 180, deliverable: 'Expansion Plan' },\n  { id: 6, name: 'Retain & Iterate', days: 999, deliverable: 'Ongoing Retainer' }\n];\n\nconst clientStartDate = new Date($env.CLIENT_START_DATE || new Date());\nconst daysSinceStart = Math.floor((new Date() - clientStartDate) / (1000 * 60 * 60 * 24));\n\nconst currentPhase = phases.find(p => daysSinceStart < p.days) || phases[5];\nconst nextPhase = phases[currentPhase.id] || null;\n\nreturn [{\n  json: {\n    daysSinceStart,\n    currentPhase: currentPhase.name,\n    currentPhaseId: currentPhase.id,\n    currentDeliverable: currentPhase.deliverable,\n    nextPhase: nextPhase?.name || 'Ongoing',\n    progressPercent: Math.min(Math.round((daysSinceStart / (nextPhase?.days || 999)) * 100), 100),\n    isOnTrack: daysSinceStart <= currentPhase.days\n  }\n}];"
+      },
+      "id": "code-002",
+      "name": "🧮 Phase Progress Check",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [360, 1300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "leftValue": "={{ $json.isOnTrack }}",
+              "rightValue": true,
+              "operator": { "type": "boolean", "operation": "true" }
+            }
+          ]
+        }
+      },
+      "id": "if-002",
+      "name": "🔀 Is On Track?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [600, 1300]
+    },
+    {
+      "parameters": {
+        "channel": "project-updates",
+        "text": "=✅ *MONTHLY MILESTONE UPDATE*\n\n🎯 Current Phase: *{{ $json.currentPhase }}*\n📅 Day {{ $json.daysSinceStart }} of engagement\n📊 Progress: {{ $json.progressPercent }}%\n✅ Status: ON TRACK\n\n📋 Next Deliverable: {{ $json.currentDeliverable }}\n🔜 Next Phase: {{ $json.nextPhase }}\n\n🏆 Great work team! Keep the momentum!",
+        "otherOptions": { "icon_emoji": ":white_check_mark:" }
+      },
+      "id": "slack-004",
+      "name": "✅ Slack: On Track",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2,
+      "position": [840, 1200]
+    },
+    {
+      "parameters": {
+        "channel": "alerts",
+        "text": "=🚨 *MILESTONE AT RISK!*\n\n⚠️ Phase: *{{ $json.currentPhase }}*\n📅 Day {{ $json.daysSinceStart }} — BEHIND SCHEDULE\n\n📋 Required: {{ $json.currentDeliverable }}\n\n🔴 *Action Required:* Immediate escalation & recovery plan needed!\n@channel",
+        "otherOptions": { "icon_emoji": ":rotating_light:" }
+      },
+      "id": "slack-005",
+      "name": "🚨 Slack: Off Track Alert",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2,
+      "position": [840, 1380]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.ERPNEXT_URL }}/api/resource/Project",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpBasicAuth",
+        "method": "POST",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Authorization", "value": "=token {{ $env.ERPNEXT_API_KEY }}:{{ $env.ERPNEXT_API_SECRET }}" }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "project_name", "value": "={{ $('Set Client Variables').item.json.projectId }}" },
+            { "name": "status", "value": "Open" },
+            { "name": "expected_start_date", "value": "={{ $now.format('YYYY-MM-DD') }}" },
+            { "name": "expected_end_date", "value": "={{ $now.plus({months: 6}).format('YYYY-MM-DD') }}" },
+            { "name": "customer", "value": "={{ $('Set Client Variables').item.json.clientName }}" }
+          ]
+        }
+      },
+      "id": "http-003",
+      "name": "🏢 ERPNext: Create Project",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [840, 600],
+      "notes": "إنشاء المشروع في ERPNext"
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.ERPNEXT_URL }}/api/resource/Task",
+        "method": "POST",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "=token {{ $env.ERPNEXT_API_KEY }}:{{ $env.ERPNEXT_API_SECRET }}" }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "subject", "value": "=Phase 1: Discovery & Audit — {{ $('Set Client Variables').item.json.clientName }}" },
+            { "name": "project", "value": "={{ $('Set Client Variables').item.json.projectId }}" },
+            { "name": "status", "value": "Open" },
+            { "name": "priority", "value": "High" },
+            { "name": "exp_end_date", "value": "={{ $now.plus({days: 7}).format('YYYY-MM-DD') }}" }
+          ]
+        }
+      },
+      "id": "http-004",
+      "name": "🏢 ERPNext: Create Task",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1080, 600]
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o",
+        "messages": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You are the Growth Intelligence AI for Hunters Growth agency. You analyze client data and generate actionable insights in Arabic and English. Be concise, data-driven, and specific. Focus on ROAS, CAC, conversion rates, and growth opportunities."
+            },
+            {
+              "role": "user",
+              "content": "=Analyze this week's performance data for our client:\n\n- Sessions: {{ $('Calculate KPIs').item.json.sessions }}\n- Conversions: {{ $('Calculate KPIs').item.json.conversions }}\n- Revenue: {{ $('Calculate KPIs').item.json.revenue }}\n- Ad Spend: {{ $('Calculate KPIs').item.json.adSpend }}\n- ROAS: {{ $('Calculate KPIs').item.json.roas }}\n- CAC: {{ $('Calculate KPIs').item.json.cac }}\n- Status: {{ $('Calculate KPIs').item.json.status }}\n\nProvide: 3 key insights + 2 immediate action items + 1 growth opportunity. Keep it under 200 words."
+            }
+          ]
+        },
+        "options": { "maxTokens": 500, "temperature": 0.3 }
+      },
+      "id": "openai-001",
+      "name": "🤖 AI Growth Intelligence",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1,
+      "position": [1320, 1050],
+      "notes": "توليد رؤى ذكية بالـ AI"
+    },
+    {
+      "parameters": {
+        "channel": "ai-insights",
+        "text": "=🧠 *AI GROWTH INTELLIGENCE BRIEF*\n━━━━━━━━━━━━━━━━━━━━\n{{ $json.message.content }}\n━━━━━━━━━━━━━━━━━━━━\n_Powered by Growth Hunters AI_",
+        "otherOptions": { "icon_emoji": ":brain:", "username": "Growth Intelligence Bot" }
+      },
+      "id": "slack-006",
+      "name": "🧠 Slack: AI Insights",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2,
+      "position": [1560, 1050]
+    },
+    {
+      "parameters": {
+        "url": "https://api.ahrefs.com/v3/site-explorer/overview",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "target", "value": "={{ $env.CLIENT_DOMAIN }}" },
+            { "name": "date_from", "value": "={{ $now.minus({days: 7}).format('YYYY-MM-DD') }}" },
+            { "name": "date_to", "value": "={{ $now.format('YYYY-MM-DD') }}" }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "=Bearer {{ $env.AHREFS_API_KEY }}" }
+          ]
+        }
+      },
+      "id": "http-005",
+      "name": "🔍 SEO: Fetch Ahrefs Data",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [360, 1500],
+      "notes": "جلب بيانات SEO من Ahrefs"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "weeks", "weeksInterval": 2, "triggerAtDay": [1] }]
+        }
+      },
+      "id": "schedule-004",
+      "name": "📅 Bi-Weekly SEO Scheduler",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [120, 1500]
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o",
+        "messages": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You are an expert SEO strategist. Analyze the provided SEO data and generate a content strategy with specific keyword recommendations, topic clusters, and on-page optimization suggestions. Respond in a structured format."
+            },
+            {
+              "role": "user",
+              "content": "=Generate a bi-weekly SEO content plan based on this data:\n{{ JSON.stringify($json) }}\n\nProvide: 5 blog post ideas with target keywords, 3 technical SEO fixes, and a content calendar for the next 2 weeks."
+            }
+          ]
+        },
+        "options": { "maxTokens": 800, "temperature": 0.4 }
+      },
+      "id": "openai-002",
+      "name": "🔍 AI SEO Strategy Agent",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1,
+      "position": [600, 1500],
+      "notes": "وكيل SEO الذكي"
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "resource": "task",
+        "name": "=📝 SEO Content Plan — {{ $now.format('DD MMM') }}",
+        "description": "={{ $json.message.content }}",
+        "dueDate": "={{ $now.plus({days: 3}).toISO() }}",
+        "priority": 1
+      },
+      "id": "clickup-004",
+      "name": "📋 Create SEO Tasks in ClickUp",
+      "type": "n8n-nodes-base.clickUp",
+      "typeVersion": 1,
+      "position": [840, 1500]
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o",
+        "messages": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You are an expert social media and content marketer for B2B and B2C brands. Create high-quality, engaging content in Arabic and English. Focus on value, storytelling, and conversion."
+            },
+            {
+              "role": "user",
+              "content": "=Create a weekly social media content calendar with:\n- 3 LinkedIn posts (professional, insights-focused)\n- 3 Instagram captions (engaging, visual)\n- 2 Twitter/X threads (quick wins, industry tips)\n- 1 Facebook post (community-focused)\n\nBrand: {{ $env.CLIENT_BRAND_NAME }}\nIndustry: {{ $env.CLIENT_INDUSTRY }}\nTone: Professional but approachable\nLanguage: Mix of Arabic and English"
+            }
+          ]
+        },
+        "options": { "maxTokens": 1200, "temperature": 0.7 }
+      },
+      "id": "openai-003",
+      "name": "📱 AI Content Creator Agent",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1,
+      "position": [840, 1700],
+      "notes": "وكيل إنشاء المحتوى"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "weeks", "weeksInterval": 1, "triggerAtDay": [1] }]
+        }
+      },
+      "id": "schedule-005",
+      "name": "📅 Content Calendar Scheduler",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [120, 1700]
+    },
+    {
+      "parameters": {
+        "channel": "content-pipeline",
+        "text": "=📱 *WEEKLY CONTENT CALENDAR READY*\n\n{{ $json.message.content }}\n\n━━━━━━━━━━━━━━━━━━━━\n⚡ Content generated by Growth Hunters AI\n📅 Week of: {{ $now.format('DD MMM YYYY') }}",
+        "otherOptions": { "icon_emoji": ":pencil2:", "username": "Content Bot" }
+      },
+      "id": "slack-007",
+      "name": "📱 Slack: Content Calendar",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2,
+      "position": [1080, 1700]
+    }
+  ],
+  "connections": {
+    "📥 Client Onboarding Webhook": {
+      "main": [[{ "node": "⚙️ Set Client Variables", "type": "main", "index": 0 }]]
+    },
+    "🚀 New Client Trigger": {
+      "main": [[{ "node": "⚙️ Set Client Variables", "type": "main", "index": 0 }]]
+    },
+    "⚙️ Set Client Variables": {
+      "main": [[
+        { "node": "🔗 Create CRM Contact", "type": "main", "index": 0 },
+        { "node": "📋 Phase 1: Discovery Task", "type": "main", "index": 0 },
+        { "node": "📋 Phase 2: Strategy Task", "type": "main", "index": 0 }
+      ]]
+    },
+    "🔗 Create CRM Contact": {
+      "main": [[
+        { "node": "📧 Welcome Email to Client", "type": "main", "index": 0 },
+        { "node": "🏢 ERPNext: Create Project", "type": "main", "index": 0 }
+      ]]
+    },
+    "📋 Phase 1: Discovery Task": {
+      "main": [[{ "node": "💬 Slack: Team Notification", "type": "main", "index": 0 }]]
+    },
+    "🏢 ERPNext: Create Project": {
+      "main": [[{ "node": "🏢 ERPNext: Create Task", "type": "main", "index": 0 }]]
+    },
+    "⏰ Daily Check Scheduler": {
+      "main": [[{ "node": "📊 Check Overdue Tasks", "type": "main", "index": 0 }]]
+    },
+    "📊 Check Overdue Tasks": {
+      "main": [[{ "node": "🔀 Has Overdue Tasks?", "type": "main", "index": 0 }]]
+    },
+    "🔀 Has Overdue Tasks?": {
+      "main": [
+        [{ "node": "🚨 Slack: Overdue Alert", "type": "main", "index": 0 }],
+        []
+      ]
+    },
+    "📅 Weekly Report Scheduler": {
+      "main": [[
+        { "node": "📈 Fetch GA4 Analytics", "type": "main", "index": 0 },
+        { "node": "📢 Fetch Meta Ads Data", "type": "main", "index": 0 }
+      ]]
+    },
+    "📈 Fetch GA4 Analytics": {
+      "main": [[{ "node": "🔀 Merge Analytics Data", "type": "main", "index": 0 }]]
+    },
+    "📢 Fetch Meta Ads Data": {
+      "main": [[{ "node": "🔀 Merge Analytics Data", "type": "main", "index": 1 }]]
+    },
+    "🔀 Merge Analytics Data": {
+      "main": [[{ "node": "🧮 Calculate KPIs", "type": "main", "index": 0 }]]
+    },
+    "🧮 Calculate KPIs": {
+      "main": [[
+        { "node": "💬 Slack: Weekly Report", "type": "main", "index": 0 },
+        { "node": "📧 Weekly Report Email", "type": "main", "index": 0 },
+        { "node": "🤖 AI Growth Intelligence", "type": "main", "index": 0 }
+      ]]
+    },
+    "🤖 AI Growth Intelligence": {
+      "main": [[{ "node": "🧠 Slack: AI Insights", "type": "main", "index": 0 }]]
+    },
+    "📅 Monthly Review Scheduler": {
+      "main": [[{ "node": "🧮 Phase Progress Check", "type": "main", "index": 0 }]]
+    },
+    "🧮 Phase Progress Check": {
+      "main": [[{ "node": "🔀 Is On Track?", "type": "main", "index": 0 }]]
+    },
+    "🔀 Is On Track?": {
+      "main": [
+        [{ "node": "✅ Slack: On Track", "type": "main", "index": 0 }],
+        [{ "node": "🚨 Slack: Off Track Alert", "type": "main", "index": 0 }]
+      ]
+    },
+    "📅 Bi-Weekly SEO Scheduler": {
+      "main": [[{ "node": "🔍 SEO: Fetch Ahrefs Data", "type": "main", "index": 0 }]]
+    },
+    "🔍 SEO: Fetch Ahrefs Data": {
+      "main": [[{ "node": "🔍 AI SEO Strategy Agent", "type": "main", "index": 0 }]]
+    },
+    "🔍 AI SEO Strategy Agent": {
+      "main": [[{ "node": "📋 Create SEO Tasks in ClickUp", "type": "main", "index": 0 }]]
+    },
+    "📅 Content Calendar Scheduler": {
+      "main": [[{ "node": "📱 AI Content Creator Agent", "type": "main", "index": 0 }]]
+    },
+    "📱 AI Content Creator Agent": {
+      "main": [[{ "node": "📱 Slack: Content Calendar", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": "Growth Hunters — Error Handler"
+  },
+  "staticData": null,
+  "tags": ["Growth Hunters", "Marketing", "AI Agents", "Automation", "MilestoneX"],
+  "triggerCount": 5,
+  "updatedAt": "2026-03-12T00:00:00.000Z",
+  "versionId": "gh-workflow-v1.0"
+}

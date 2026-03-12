@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="slides-format" content="viewport">
+    <title>Growth Intelligence Layer — Hunters Growth</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/motion@12/dist/motion.js"></script>
+
+    <style type="text/tailwindcss">
+        @theme {
+            --color-bg: #0a0f1e;
+            --color-bg-deep: #060a14;
+            --color-surface: #131b2e;
+            --color-text: #e8edf5;
+            --color-text-secondary: #b0bdd0;
+            --color-text-muted: #6b7fa0;
+            --color-accent-1: #00D4AA;
+            --color-accent-2: #7C3AED;
+            --color-accent-3: #06B6D4;
+            --color-glass-bg: rgba(255,255,255,0.05);
+            --color-glass-border: rgba(255,255,255,0.08);
+            --color-vignette: rgba(0,0,0,0.45);
+            --font-display: 'Instrument Serif', Georgia, serif;
+            --font-body: 'Inter', system-ui, sans-serif;
+        }
+    </style>
+
+    <style>
+        :root { --color-bg: #0a0f1e; --color-text: #e8edf5; --glow-color-rgb: 0,212,170; }
+        *, *::before, *::after { box-sizing: border-box; }
+        html, body { background: var(--color-bg); margin: 0; }
+        body { font-family: var(--font-body); color: var(--color-text); overflow: hidden; height: 100vh; width: 100vw; }
+        .deck { width: 100vw; height: 100vh; position: relative; }
+        .slide { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: var(--color-bg); display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0; transform: scale(0.95); transition: opacity 0.7s ease, transform 0.7s ease; pointer-events: none; overflow: hidden; }
+        .slide.active { opacity: 1; transform: scale(1); pointer-events: all; }
+        .slide > .content { position: relative; z-index: 2; width: 100%; max-width: 1100px; padding: clamp(1.5rem, 4vw, 4rem); }
+        .nav-controls { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 16px; z-index: 100; background: var(--color-glass-bg); backdrop-filter: blur(10px); padding: 10px 24px; border-radius: 40px; border: 1px solid var(--color-glass-border); }
+        .nav-btn { width: 40px; height: 40px; border: none; background: var(--color-glass-bg); color: var(--color-accent-1); border-radius: 50%; font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.3s; }
+        .nav-btn:hover { background: var(--color-glass-border); }
+        .slide-dots { display: flex; gap: 8px; }
+        .slide-dots .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--color-glass-border); cursor: pointer; transition: background 0.3s, transform 0.3s; }
+        .slide-dots .dot.active { background: var(--color-accent-1); transform: scale(1.3); }
+        .slide-counter { font-size: 0.8rem; color: var(--color-text-muted); min-width: 40px; text-align: center; }
+        .reveal { opacity: 0; transform: translateY(20px); }
+
+        .text-glow { text-shadow: 0 0 20px rgba(var(--glow-color-rgb), 0.5), 0 0 40px rgba(var(--glow-color-rgb), 0.2); }
+        .stat-glow { text-shadow: 0 0 30px rgba(var(--glow-color-rgb), 0.6), 0 0 60px rgba(var(--glow-color-rgb), 0.25); }
+        @keyframes glow-pulse { 0%, 100% { text-shadow: 0 0 20px rgba(var(--glow-color-rgb), 0.5), 0 0 40px rgba(var(--glow-color-rgb), 0.2); } 50% { text-shadow: 0 0 30px rgba(var(--glow-color-rgb), 0.8), 0 0 60px rgba(var(--glow-color-rgb), 0.3); } }
+        .glow-pulse { animation: glow-pulse 3s ease-in-out infinite; }
+        @keyframes float-slow { 0% { transform: translate(0, 0) scale(1); } 25% { transform: translate(60px, -50px) scale(1.12); } 50% { transform: translate(-40px, 40px) scale(0.9); } 75% { transform: translate(50px, 20px) scale(1.08); } 100% { transform: translate(0, 0) scale(1); } }
+        @keyframes float-drift { 0% { transform: translate(0, 0) scale(1) rotate(0deg); } 33% { transform: translate(-50px, -60px) scale(1.15) rotate(3deg); } 66% { transform: translate(40px, 30px) scale(0.88) rotate(-2deg); } 100% { transform: translate(0, 0) scale(1) rotate(0deg); } }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
+        .gradient-mesh { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+        .blob { position: absolute; border-radius: 50%; filter: blur(80px); animation: float-slow 10s ease-in-out infinite; }
+        .blob:nth-child(2) { animation: float-drift 14s ease-in-out infinite; }
+        .blob:nth-child(3) { animation: float-slow 18s ease-in-out infinite reverse; }
+        .slide::before { content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E"); background-repeat: repeat; background-size: 256px 256px; opacity: 0.03; mix-blend-mode: overlay; }
+        .slide::after { content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none; background: radial-gradient(ellipse at center, transparent 50%, var(--color-vignette) 100%); }
+
+        .bar-fill { height: 100%; border-radius: 6px; width: 0; }
+        .bar-track { background: var(--color-glass-bg); border-radius: 8px; height: 28px; overflow: hidden; border: 1px solid var(--color-glass-border); }
+
+        .flow-step { position: relative; padding-left: 2.5rem; }
+        .flow-step::before { content: ''; position: absolute; left: 0.6rem; top: 1.8rem; bottom: -1rem; width: 2px; background: linear-gradient(to bottom, var(--color-accent-1), transparent); }
+        .flow-step:last-child::before { display: none; }
+        .flow-dot { position: absolute; left: 0; top: 0.35rem; width: 1.4rem; height: 1.4rem; border-radius: 50%; background: var(--color-accent-1); box-shadow: 0 0 12px rgba(0,212,170,0.5); display: flex; align-items: center; justify-content: center; font-size: 0.65rem; font-weight: 700; color: #0a0f1e; }
+
+        .phase-badge { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.35rem 1rem; border-radius: 20px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; }
+
+        @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.2s !important; } }
+    </style>
+</head>
+<body>
+
+<div class="mouse-spotlight" style="position:fixed;inset:0;z-index:99;pointer-events:none;"></div>
+
+<div class="deck">
+
+    <!-- SLIDE 1: TITLE -->
+    <div class="slide slide-1 active" data-slide="1">
+        <div class="gradient-mesh">
+            <div class="blob" style="width:500px;height:500px;top:-100px;right:-100px;background:var(--color-accent-1);opacity:0.14;"></div>
+            <div class="blob" style="width:350px;height:350px;bottom:-80px;left:-60px;background:var(--color-accent-2);opacity:0.12;"></div>
+            <div class="blob" style="width:250px;height:250px;top:40%;left:20%;background:var(--color-accent-3);opacity:0.10;"></div>
+        </div>
+        <canvas class="particle-canvas" style="position:absolute;inset:0;z-index:1;"></canvas>
+        <div class="content text-center">
+            <div class="text-[100px] mb-4 animate-[float_3s_ease-in-out_infinite]">🧠</div>
+            <h1 class="font-display text-[clamp(2.5rem,6vw,4.5rem)] font-black bg-linear-to-br from-accent-1 via-accent-3 to-accent-2 bg-clip-text text-transparent tracking-tight mb-4 reveal">Growth Intelligence Layer</h1>
+            <p class="text-[clamp(0.9rem,1.5vw,1.3rem)] font-light text-text-muted tracking-[6px] uppercase reveal">Data-Driven Decisions at Every Phase</p>
+            <p class="text-text-muted text-sm mt-6 reveal">Hunters Growth × MilestoneX</p>
+        </div>
+    </div>
+
+    <!-- SLIDE 2: WHAT IS GIL -->
+    <div class="slide slide-2" data-slide="2">
+        <div class="gradient-mesh">
+            <div class="blob" style="width:400px;height:400px;top:-80px;right:-60px;background:var(--color-accent-1);opacity:0.08;"></div>
+            <div class="blob" style="width:280px;height:280px;bottom:-60px;left:-40px;background:var(--color-accent-2);opacity:0.06;"></div>
+        </div>
+        <div class="content">
+            <p class="phase-badge bg-accent-1/15 text-accent-1 mb-4 reveal">🧠 Overview</p>
+            <h2 class="font-display text-[clamp(1.8rem,4vw,2.8rem)] font-bold mb-6 reveal">What is the Growth Intelligence Layer?</h2>
+            <p class="text-text-secondary text-lg mb-8 max-w-3xl reveal">A unified analytics & insights system embedded across every phase of your growth journey — not a bolt-on report, but a living intelligence engine.</p>
+            <div class="grid grid-cols-3 gap-5">
+                <div class="bg-glass-bg backdrop-blur-xl border border-glass-border rounded-xl p-6 hover:-translate-y-1 hover:shadow-xl transition reveal">
+                    <div class="text-3xl mb-3">📊</div>
+                    <h3 class="font-bold text-accent-1 mb-2">Collect</h3>
+                    <p class="text-text-secondary text-sm">Unified data from 15+ sources: GA4, Meta, Google Ads, CRM, ClickUp, Stripe</p>
+                </div>
+                <div class="bg-glass-bg backdrop-blur-xl border border-glass-border rounded-xl p-6 hover:-translate-y-1 hover:shadow-xl transition reveal">
+                    <div class="text-3xl mb-3">🔍</div>
+                    <h3 class="font-bold text-accent-3 mb-2">Analyze</h3>
+                    <p class="text-text-secondary text-sm">Attribution modeling, cohort analysis, funnel diagnostics, anomaly detection</p>
+                </div>
+                <div class="bg-glass-bg backdrop-blur-xl border border-glass-border rounded-xl p-6 hover:-translate-y-1 hover:shadow-xl transition reveal">
+                    <div class="text-3xl mb-3">🎯</div>
+                    <h3 class="font-bold text-accent-2 mb-2">Act</h3>
+                    <p class="text-text-secondary text-sm">Automated alerts, weekly insights briefs, sprint recommendations tied to OKRs</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 3: THE 5 INTELLIGENCE LAYERS -->
+    <div class="slide slide-3" data-slide="3">
+        <div class="gradient-mesh">
+            <div class="blob" style="width:350px;height:350px;top:-60px;left:-80px;background:var(--color-accent-3);opacity:0.08;"></div>
+            <div class="blob" style="width:250px;height:250px;bottom:-50px;right:-40px;background:var(--color-accent-1);opacity:0.06;"></div>
+        </div>
+        <div class="content">
+            <p class="phase-badge bg-accent-3/15 text-accent-3 mb-4 reveal">🏗️ Architecture</p>
+            <h2 class="font-display text-[clamp(1.8rem,4vw,2.6rem)] font-bold mb-6 reveal">5 Intelligence Layers</h2>
+            <div class="flex flex-col gap-3">
+                <div class="bg-glass-bg backdrop-blur-xl border border-glass-border rounded-lg p-4 flex items-center gap-4 hover:-translate-y-0.5 transition reveal">
+                    <div class="w-10 h-10 rounded-full bg-accent-1/20 flex items-center justify-center text-accent-1 font-bold text-sm shrink-0">L1</div>
+                    <div><span class="font-bold text-accent-1">Data Ingestion</span> <span class="text-text-secondary text-sm ml-2">— GA4, GTM, Server-Side Tracking, Meta CAPI, CRM webhooks</span></div>
+                </div>
+                <div class="bg-glass-bg backdrop-blur-xl border border-glass-border rounded-lg p-4 flex items-center gap-4 hover:-translate-y-0.5 transition reveal">
+                    <div class="w-10 h-10 rounded-full bg-accent-3/20 flex items-center justify-center text-accent-3 font-bold text-sm shrink-0">L2</div>
+                    <div><span class="font-bold text-accent-3">Data Warehouse</span> <span class="text-text-secondary text-sm ml-2">— BigQuery / PostgreSQL + dbt transformations, single source of truth</span></div>
+                </div>
+                <div class="bg-glass-bg backdrop-blur-xl border border-glass-border rounded-lg p-4 flex items-center gap-4 hover:-translate-y-0.5 transition reveal">
+                    <div class="w-10 h-10 rounded-full bg-accent-2/20 flex items-center justify-center text-accent-2 font-bold text-sm shrink-0">L3</div>
+                    <div><span class="font-bold text-accent-2">Attribution Engine</span> <span class="text-text-secondary text-sm ml-2">— Multi-touch DDA, incrementality tests, MMM calibration</span></div>
+                </div>
+                <div class="bg-glass-bg backdrop-blur-xl border border-glass-border rounded-lg p-4 flex items-center gap-4 hover:-translate-y-0.5 transition reveal">
+                    <div class="w-10 h-10 rounded-full bg-accent-1/20 flex items-center justify-center text-accent-1 font-bold text-sm shrink-0">L4</div>
+                    <div><span class="font-bold text-accent-1">Dashboard & Alerts</span> <span class="text-text-secondary text-sm ml-2">— Looker Studio live dashboards, Slack/email anomaly alerts within 2 hours</span></div>
+                </div>
+                <div class="bg-glass-bg backdrop-blur-xl border border-glass-border rounded-lg p-4 flex items-center gap-4 hover:-translate-y-0.5 transition reveal">
+                    <div class="w-10 h-10 rounded-full bg-accent-3/20 flex items-center justify-center text-accent-3 font-bold text-sm shrink-0">L5</div>
+                    <div><span class="font-bold text-accent-3">Insight Actions</span> <span class="text-text-secondary text-sm ml-2">— Weekly insight briefs, sprint-linked recommendations, QBR deep dives</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 4: PHASE 1 DISCOVERY INTEL -->
+    <div class="slide slide-4" data-slide="4">
+        <div class="gradient-mesh">
+            <div class="blob" style="width:380px;height:380px;top:-70px;right:-50px;background:var(--color-accent-1);opacity:0.08;"></div>
+            <div class="blob" style="width:260px;height:260px;bottom:-50px;left:-40px;background:var(--color-accent-3);opacity:0.06;"></div>
+        </div>
+        <canvas class="particle-canvas-ambient" style="position:absolute;inset:0;z-index:1;"></canvas>
+        <div class="content">
+            <p class="phase-badge bg-accent-1/15 text-accent-1 mb-3 reveal">Phase 1</p>
+            <h2 class="font-display text-[clamp(1.8rem,4vw,2.6rem)] font-bold mb-5 reveal">Discovery Intelligence</h2>
+            <p class="text-text-secondary mb-6 reveal">الأسبوع 1-2 — تحليل الوضع الحالي وتحديد الفرص</p>
+            <div class="flex flex-col gap-3">
+                <div class="flow-step reveal">
+                    <div class="flow-dot">1</div>
+                    <div class="bg-glass-bg backdrop-blur-xl border border-glass-border rounded-lg p-3.5">
+                        <span class="font-semibold text-accent-1">Analytics Audit</span>
+                        <span class="text-text-secondary text-sm ml-2">— مراجعة GA4, GTM, Pixel events, conversion tracking accuracy</span>
+                    </div>
+                </div>
+                <div class="flow-step reveal">
+                    <div class="flow-dot">2</div>
+                    <div class="bg-glass-bg backdrop-blur-xl border border-glass-border rounded-lg p-3.5">
+                        <span class="font-semibold text-accent-3">Competitor Benchmark</span>
+                        <span class="text-text-secondary text-sm ml-2">— تحليل 5 منافسين: traffic, keywords, ad spend, social engagement</span>
+                    </div>
+                </div>
+                <div class="flow-step reveal">
+                    <div class="flow-dot">3</div>
+                    <div class="bg-glass-bg backdrop-blur-xl border border-glass-border rounded-lg p-3.5">
+                        <span class="font-semibold text-accent-2">Funnel Mapping</span>
+                        <span class="text-text-secondary text-sm ml-2">— رسم الـ customer journey الكامل + تحديد الـ drop-off points</span>
+                    </div>
+                </div>
+                <div class="flow-step reveal">
+                    <div class="flow-dot">4</div>
+                    <div class="bg-glass-bg backdrop-blur-xl border border-glass-border rounded-lg p-3.5">
+                        <span class="font-semibold text-accent-1">Baseline KPIs</span>
+                        <span class="text-text-secondary text-sm ml-2">— تحديد CAC, LTV, ROAS, CRO, NPS الحالية كنقطة بداية</span>
+                    </div>
+                </div>
+                <div class="flow-step reveal">
+                    <div class="flow-dot">✓</div>
+                    <div class="bg-accent-1/10 border border-accent-1/20 rounded-lg p-3.5">
+                        <span class="font-semibold text-accent-1">📄 Deliverable:</span>
+                        <span class="text-text-secondary text-sm ml-2">Discovery Intelligence Report + Data Health Scorecard</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 5: PHASE 2 STRATEGY INTEL -->
+    <div class="slide slide-5" data-slide="5">
+        <div class="gradient-mesh">
+            <div class="blob" style="width:360px;height:360px;top:-60px;left:-70px;background:var(--color-accent-2);opacity:0.08;"></div>
+            <div class="blob" style="width:240px;height:240px;bottom:-40px;right:-50px;background:var(--color-accent-1);opacity:0.06;"></div>
+        </div>
+        <div class="content">
+            <p class="phase-badge bg-accent-2/15 text-accent-2 mb-3 reveal">Phase 2</p>
+            <h2 class="font-display text-[clamp(1.8rem,4vw,2.6rem)] font-bold mb-5 reveal">Strategy Intelligence</h2>
+            <p class="text-text-secondary mb-6 reveal">الأسبوع 3-4 — بناء الاستراتيجية على أساس بيانات حقيقية</p>
+            <div class="flex flex-col gap-3">
+                <div class="flow-step reveal">
+                    <div class="flow-dot">1</div>
+                    <div class="bg-glass-bg backdrop-blur-xl border border-glass-border rounded-lg p-3.5">
+                        <span class="font-semibold text-accent-2">OKR Framework Setup</span>
+                        <span class="text-text-secondary text-sm ml-2">— ربط كل هدف بـ measurable key results مع targets رقمية</span>
+                    </div>
+                </div>
+                <div class="flow-step reveal">
+                    <div class="flow-dot">2</div>
+                    <div class="bg-glass-bg backdrop-blur-xl border border-glass-border rounded-lg p-3.5">
+                        <span class="font-semibold text-accent-1">KPI Dashboard Build</span>
+                        <span class="text-text-secondary text-sm ml-2">— Looker Studio dashboard بـ 5-7 KPIs أساسية + real-time sync</span>
+                    </div>
+                </div>
+                <div class="flow-step reveal">
+                    <div class="flow-dot">3</div>
+                    <div class="bg-glass-bg backdrop-blur-xl border border-glass-border rounded-lg p-3.5">
+                        <span class="font-semibold text-accent-3">Tracking Implementation</span>
+                        <span class="text-text-secondary text-sm ml-2">— Server-side GTM + Meta CAPI + enhanced e-commerce events</span>
+                    </div>
+                </div>
+                <div class="flow-step reveal">
+                    <div class="flow-dot">4</div>
+                    <div class="bg-glass-bg backdrop-blur-xl border border-glass-border rounded-lg p-3.5">
+                        <span class="font-semibold text-accent-2">Alert System Config</span>
+                        <span class="text-text-secondary text-sm ml-2">— Slack alerts للـ anomalies: traffic drops >15%, CPA spikes >20%</span>
+                    </div>
+                </div>
+                <div class="flow-step reveal">
+                    <div class="flow-dot">✓</div>
+                    <div class="bg-accent-2/10 border border-accent-2/20 rounded-lg p-3.5">
+                        <span class="font-semibold text-accent-2">📄 Deliverable:</span>
+                        <span class="text-text-secondary text-sm ml-2">Growth Blueprint + Live KPI Dashboard + Alert Playbook</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 6: PHASE 3 LAUNCH INTEL -->
+    <div class="slide slide-6" data-slide="6">
+        <div class="gradient-mesh">
+            <div class="blob" style="width:370px;height:370px;top:-70px;right:-60px;background:var(--color-accent-3);opacity:0.08;"></div>
+            <div class="blob" style="width:250px;height:250px;bottom:-50px;left:-40px;background:var(--color-accent-2);opacity:0.06;"></div>
+        </div>
+        <div class="content">
+            <p class="phase-badge bg-accent-3/15 text-accent-3 mb-3 reveal">Phase 3</p>
+            <h2 class="font-display text-[clamp(1.8rem,4vw,2.6rem)] font-bold mb-5 reveal">Launch Intelligence</h2>
+            <p class="text-text-secondary mb-6 reveal">الشهر 2-3 — مراقبة الأداء لحظة بلحظة أثناء الإطلاق</p>
+            <div class="grid grid-cols-2 gap-5">
+                <div class="bg-glass-bg backdrop-blur-xl border border-glass-border rounded-xl p-5 hover:-translate-y-1 transition reveal">
+                    <div class="text-2xl mb-2">⚡</div>
+                    <h3 class="font-bold text-accent-3 text-sm mb-2">Real-Time Campaign Monitor</h3>
+                    <p class="text-text-secondary text-xs">مراقبة كل حملة كل ساعة: spend pacing, CPA trends, ROAS تلقائي</p>
+                </div>
+                <div class="bg-glass-bg backdrop-blur-xl border border-glass-border rounded-xl p-5 hover:-translate-y-1 transition reveal">
+                    <div class="text-2xl mb-2">🧪</div>
+                    <h3 class="font-bold text-accent-1 text-sm mb-2">A/B Test Framework</h3>
+                    <p class="text-text-secondary text-xs">Statistical significance calculator + test velocity: 3 tests/sprint minimum</p>
+                </div>
+                <div class="bg-glass-bg backdrop-blur-xl border border-glass-border rounded-xl p-5 hover:-translate-y-1 transition reveal">
+                    <div class="text-2xl mb-2">📈</div>
+                    <h3 class="font-bold text-accent-2 text-sm mb-2">Weekly Insights Brief</h3>
+                    <p class="text-text-secondary text-xs">تقرير أسبوعي: wins, losses, anomalies, next sprint recommendations</p>
+                </div>
+                <div class="bg-glass-bg backdrop-blur-xl border border-glass-border rounded-xl p-5 hover:-translate-y-1 transition reveal">
+                    <div class="text-2xl mb-2">🔔</div>
+                    <h3 class="font-bold text-accent-1 text-sm mb-2">Smart Alerts Active</h3>
+                    <p class="text-text-secondary text-xs">Budget burn alerts, conversion drop alerts, competitor price change alerts</p>
+                </div>
+            </div>
+            <div class="mt-5 bg-accent-3/10 border border-accent-3/20 rounded-lg p-3.5 reveal">
+                <span class="font-semibold text-accent-3">📄 Deliverable:</span>
+                <span class="text-text-secondary text-sm ml-2">Weekly Insights Brief + Sprint Scorecard + Test Results Log</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 7: PHASE 4 OPTIMIZE INTEL -->
+    <div class="slide slide-7" data-slide="7">
+        <div class="gradient-mesh">
+            <div class="blob" style="width:380px;height:380px;top:-60px;left:-70px;background:var(--color-accent-1);opacity:0.08;"></div>
+            <div class="blob" style="width:260px;height:260px;bottom:-50px;right:-40px;background:var(--color-accent-3);opacity:0.06;"></div>
+        </div>
+        <div class="content">
+            <p class="phase-badge bg-accent-1/15 text-accent-1 mb-3 reveal">Phase 4</p>
+            <h2 class="font-display text-[clamp(1.8rem,4vw,2.6rem)] font-bold mb-5 reveal">Optimize Intelligence</h2>
+            <p class="text-text-secondary mb-6 reveal">الشهر 3-5 — تحسين مستمر مبني على البيانات</p>
+            <div class="flex flex-col gap-3">
+                <div class="flow-step reveal">
+                    <div class="flow-dot">1</div>
+                    <div class="bg-glass-bg backdrop-blur-xl border border-glass-border rounded-lg p-3.5">
+                        <span class="font-semibold text-accent-1">Attribution Deep Dive</span>
+                        <span class="text-text-secondary text-sm ml-2">— Multi-touch attribution: أي channel بيجيب أكتر ROI فعلاً؟</span>
+                    </div>
+                </div>
+                <div class="flow-step reveal">
+                    <div class="flow-dot">2</div>
+                    <div class="bg-glass-bg backdrop-blur-xl border border-glass-border rounded-lg p-3.5">
+                        <span class="font-semibold text-accent-3">Cohort Analysis</span>
+                        <span class="text-text-secondary text-sm ml-2">— تحليل retention بالـ cohort: أي مجموعة عملاء أعلى LTV؟</span>
+                    </div>
+                </div>
+                <div class="flow-step reveal">
+                    <div class="flow-dot">3</div>
+                    <div class="bg-glass-bg backdrop-blur-xl border border-glass-border rounded-lg p-3.5">
+                        <span class="font-semibold text-accent-2">Budget Optimizer</span>
+                        <span class="text-text-secondary text-sm ml-2">— إعادة توزيع الميزانية بناءً على incremental ROAS لكل channel</span>
+                    </div>
+                </div>
+                <div class="flow-step reveal">
+                    <div class="flow-dot">4</div>
+                    <div class="bg-glass-bg backdrop-blur-xl border border-glass-border rounded-lg p-3.5">
+                        <span class="font-semibold text-accent-1">QBR Preparation</span>
+                        <span class="text-text-secondary text-sm ml-2">— Quarterly Business Review: 90-day analysis + next quarter roadmap</span>
+                    </div>
+                </div>
+                <div class="flow-step reveal">
+                    <div class="flow-dot">✓</div>
+                    <div class="bg-accent-1/10 border border-accent-1/20 rounded-lg p-3.5">
+                        <span class="font-semibold text-accent-1">📄 Deliverable:</span>
+                        <span class="text-text-secondary text-sm ml-2">QBR Deck + Attribution Report + Budget Reallocation Plan</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 8: PHASE 5 SCALE INTEL -->
+    <div class="slide slide-8" data-slide="8">
+        <div class="gradient-mesh">
+            <div class="blob" style="width:360px;height:360px;top:-60px;right:-60px;background:var(--color-accent-2);opacity:0.08;"></div>
+            <div class="blob" style="width:240px;height:240px;bottom:-40px;left:-50px;background:var(--color-accent-1);opacity:0.06;"></div>
+        </div>
+        <div class="content">
+            <p class="phase-badge bg-accent-2/15 text-accent-2 mb-3 reveal">Phase 5</p>
+            <h2 class="font-display text-[clamp(1.8rem,4vw,2.6rem)] font-bold mb-5 reveal">Scale Intelligence</h2>
+            <p class="text-text-secondary mb-6 reveal">الشهر 5+ — ذكاء التوسع والدخول لأسواق جديدة</p>
+            <div class="grid grid-cols-2 gap-5">
+                <div class="bg-glass-bg backdrop-blur-xl border border-glass-border rounded-xl p-5 hover:-translate-y-1 transition reveal">
+                    <div class="text-2xl mb-2">🌍</div>
+                    <h3 class="font-bold text-accent-2 text-sm mb-2">Market Expansion Analysis</h3>
+                    <p class="text-text-secondary text-xs">TAM/SAM/SOM لكل سوق جديد + competitor density + regulatory scan</p>
+                </div>
+                <div class="bg-glass-bg backdrop-blur-xl border border-glass-border rounded-xl p-5 hover:-translate-y-1 transition reveal">
+                    <div class="text-2xl mb-2">🔄</div>
+                    <h3 class="font-bold text-accent-1 text-sm mb-2">Predictive LTV Modeling</h3>
+                    <p class="text-text-secondary text-xs">ML models تتنبأ بـ LTV العميل من أول 30 يوم — target: LTV:CAC ≥ 3:1</p>
+                </div>
+                <div class="bg-glass-bg backdrop-blur-xl border border-glass-border rounded-xl p-5 hover:-translate-y-1 transition reveal">
+                    <div class="text-2xl mb-2">📊</div>
+                    <h3 class="font-bold text-accent-3 text-sm mb-2">Cross-Market Dashboard</h3>
+                    <p class="text-text-secondary text-xs">Dashboard واحد يقارن أداء كل سوق: Egypt vs KSA vs UAE في real-time</p>
+                </div>
+                <div class="bg-glass-bg backdrop-blur-xl border border-glass-border rounded-xl p-5 hover:-translate-y-1 transition reveal">
+                    <div class="text-2xl mb-2">🤖</div>
+                    <h3 class="font-bold text-accent-2 text-sm mb-2">Automated Reporting</h3>
+                    <p class="text-text-secondary text-xs">Board-ready reports تتولد تلقائي كل شهر بالـ KPIs + insights + next steps</p>
+                </div>
+            </div>
+            <div class="mt-5 bg-accent-2/10 border border-accent-2/20 rounded-lg p-3.5 reveal">
+                <span class="font-semibold text-accent-2">📄 Deliverable:</span>
+                <span class="text-text-secondary text-sm ml-2">Market Expansion Playbook + Predictive Models + Cross-Market Dashboard</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 9: KPI FRAMEWORK -->
+    <div class="slide slide-9" data-slide="9">
+        <div class="gradient-mesh">
+            <div class="blob" style="width:350px;height:350px;top:-60px;left:-60px;background:var(--color-accent-1);opacity:0.08;"></div>
+            <div class="blob" style="width:250px;height:250px;bottom:-50px;right:-40px;background:var(--color-accent-2);opacity:0.06;"></div>
+        </div>
+        <div class="content">
+            <p class="phase-badge bg-accent-1/15 text-accent-1 mb-3 reveal">📊 KPI Framework</p>
+            <h2 class="font-display text-[clamp(1.8rem,4vw,2.6rem)] font-bold mb-5 reveal">Core Metrics We Track</h2>
+            <div class="flex flex-col gap-3">
+                <div class="reveal">
+                    <div class="flex justify-between mb-1.5"><span class="text-sm font-semibold">CAC — Customer Acquisition Cost</span><span class="text-accent-1 text-sm font-bold">Target: &lt;$200</span></div>
+                    <div class="bar-track"><div class="bar-fill bg-linear-to-r from-accent-1 to-accent-3" data-width="75" style="width:0"></div></div>
+                </div>
+                <div class="reveal">
+                    <div class="flex justify-between mb-1.5"><span class="text-sm font-semibold">LTV:CAC Ratio</span><span class="text-accent-3 text-sm font-bold">Target: ≥ 3:1</span></div>
+                    <div class="bar-track"><div class="bar-fill bg-linear-to-r from-accent-3 to-accent-2" data-width="65" style="width:0"></div></div>
+                </div>
+                <div class="reveal">
+                    <div class="flex justify-between mb-1.5"><span class="text-sm font-semibold">ROAS — Return on Ad Spend</span><span class="text-accent-2 text-sm font-bold">Target: ≥ 4x</span></div>
+                    <div class="bar-track"><div class="bar-fill bg-linear-to-r from-accent-2 to-accent-1" data-width="70" style="width:0"></div></div>
+                </div>
+                <div class="reveal">
+                    <div class="flex justify-between mb-1.5"><span class="text-sm font-semibold">MRR Growth Rate</span><span class="text-accent-1 text-sm font-bold">Target: 15-25% MoM</span></div>
+                    <div class="bar-track"><div class="bar-fill bg-linear-to-r from-accent-1 to-accent-2" data-width="60" style="width:0"></div></div>
+                </div>
+                <div class="reveal">
+                    <div class="flex justify-between mb-1.5"><span class="text-sm font-semibold">NPS — Net Promoter Score</span><span class="text-accent-3 text-sm font-bold">Target: &gt; 50</span></div>
+                    <div class="bar-track"><div class="bar-fill bg-linear-to-r from-accent-3 to-accent-1" data-width="55" style="width:0"></div></div>
+                </div>
+            </div>
+            <p class="text-text-muted text-xs mt-4 reveal">Bars represent current progress toward quarterly targets. Benchmarks: LTV:CAC ≥ 3:1 healthy, NPS &gt; 50 excellent</p>
+        </div>
+    </div>
+
+    <!-- SLIDE 10: TOOL STACK -->
+    <div class="slide slide-10" data-slide="10">
+        <div class="gradient-mesh">
+            <div class="blob" style="width:370px;height:370px;top:-70px;right:-50px;background:var(--color-accent-3);opacity:0.08;"></div>
+            <div class="blob" style="width:250px;height:250px;bottom:-50px;left:-40px;background:var(--color-accent-1);opacity:0.06;"></div>
+        </div>
+        <div class="content">
+            <p class="phase-badge bg-accent-3/15 text-accent-3 mb-3 reveal">🛠️ Tech Stack</p>
+            <h2 class="font-display text-[clamp(1.8rem,4vw,2.6rem)] font-bold mb-6 reveal">Intelligence Tool Stack</h2>
+            <div class="grid grid-cols-3 gap-4">
+                <div class="bg-glass-bg backdrop-blur-xl border border-glass-border rounded-xl p-5 hover:-translate-y-1 transition reveal">
+                    <p class="text-xs uppercase tracking-wider text-text-muted mb-2">Tracking</p>
+                    <p class="text-accent-1 font-bold text-sm">GA4 + GTM</p>
+                    <p class="text-accent-3 font-bold text-sm">Meta CAPI</p>
+                    <p class="text-accent-2 font-bold text-sm">Hotjar / Clarity</p>
+                </div>
+                <div class="bg-glass-bg backdrop-blur-xl border border-glass-border rounded-xl p-5 hover:-translate-y-1 transition reveal">
+                    <p class="text-xs uppercase tracking-wider text-text-muted mb-2">Visualization</p>
+                    <p class="text-accent-1 font-bold text-sm">Looker Studio</p>
+                    <p class="text-accent-3 font-bold text-sm">Supermetrics</p>
+                    <p class="text-accent-2 font-bold text-sm">Notion Dashboards</p>
+                </div>
+                <div class="bg-glass-bg backdrop-blur-xl border border-glass-border rounded-xl p-5 hover:-translate-y-1 transition reveal">
+                    <p class="text-xs uppercase tracking-wider text-text-muted mb-2">Collaboration</p>
+                    <p class="text-accent-1 font-bold text-sm">ClickUp</p>
+                    <p class="text-accent-3 font-bold text-sm">Slack</p>
+                    <p class="text-accent-2 font-bold text-sm">Loom</p>
+                </div>
+                <div class="bg-glass-bg backdrop-blur-xl border border-glass-border rounded-xl p-5 hover:-translate-y-1 transition reveal">
+                    <p class="text-xs uppercase tracking-wider text-text-muted mb-2">Attribution</p>
+                    <p class="text-accent-1 font-bold text-sm">Triple Whale</p>
+                    <p class="text-accent-3 font-bold text-sm">GA4 DDA</p>
+                    <p class="text-accent-2 font-bold text-sm">UTM Framework</p>
+                </div>
+                <div class="bg-glass-bg backdrop-blur-xl border border-glass-border rounded-xl p-5 hover:-translate-y-1 transition reveal">
+                    <p class="text-xs uppercase tracking-wider text-text-muted mb-2">Data Pipeline</p>
+                    <p class="text-accent-1 font-bold text-sm">BigQuery</p>
+                    <p class="text-accent-3 font-bold text-sm">Zapier / Make</p>
+                    <p class="text-accent-2 font-bold text-sm">Webhooks</p>
+                </div>
+                <div class="bg-glass-bg backdrop-blur-xl border border-glass-border rounded-xl p-5 hover:-translate-y-1 transition reveal">
+                    <p class="text-xs uppercase tracking-wider text-text-muted mb-2">Competitive</p>
+                    <p class="text-accent-1 font-bold text-sm">SEMrush</p>
+                    <p class="text-accent-3 font-bold text-sm">SimilarWeb</p>
+                    <p class="text-accent-2 font-bold text-sm">Social Listening</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 11: REPORTING CADENCE -->
+    <div class="slide slide-11" data-slide="11">
+        <div class="gradient-mesh">
+            <div class="blob" style="width:350px;height:350px;top:-60px;left:-50px;background:var(--color-accent-2);opacity:0.08;"></div>
+            <div class="blob" style="width:250px;height:250px;bottom:-40px;right:-40px;background:var(--color-accent-3);opacity:0.06;"></div>
+        </div>
+        <div class="content">
+            <p class="phase-badge bg-accent-2/15 text-accent-2 mb-3 reveal">📅 Cadence</p>
+            <h2 class="font-display text-[clamp(1.8rem,4vw,2.6rem)] font-bold mb-6 reveal">Reporting Rhythm</h2>
+            <div class="grid grid-cols-2 gap-5">
+                <div class="bg-glass-bg backdrop-blur-xl border-l-4 border-accent-1 rounded-xl p-5 reveal">
+                    <h3 class="font-bold text-accent-1 mb-2">⚡ Real-Time</h3>
+                    <p class="text-text-secondary text-sm">Slack alerts للـ anomalies: budget pacing, CPA spikes, traffic drops — خلال ساعتين</p>
+                </div>
+                <div class="bg-glass-bg backdrop-blur-xl border-l-4 border-accent-3 rounded-xl p-5 reveal">
+                    <h3 class="font-bold text-accent-3 mb-2">📊 Weekly</h3>
+                    <p class="text-text-secondary text-sm">Insights Brief كل إثنين: top wins, key losses, 3 recommendations للـ sprint الجاي</p>
+                </div>
+                <div class="bg-glass-bg backdrop-blur-xl border-l-4 border-accent-2 rounded-xl p-5 reveal">
+                    <h3 class="font-bold text-accent-2 mb-2">📈 Monthly</h3>
+                    <p class="text-text-secondary text-sm">Performance Report: KPI progress vs targets, budget utilization, competitive moves</p>
+                </div>
+                <div class="bg-glass-bg backdrop-blur-xl border-l-4 border-accent-1 rounded-xl p-5 reveal">
+                    <h3 class="font-bold text-accent-1 mb-2">🎯 Quarterly</h3>
+                    <p class="text-text-secondary text-sm">QBR Deep Dive: 90-day analysis + attribution audit + next quarter OKRs + budget plan</p>
+                </div>
+            </div>
+            <p class="text-text-muted text-xs mt-5 text-center reveal">كل التقارير متاحة live على Looker Studio — مش PDF ثابت</p>
+        </div>
+    </div>
+
+    <!-- SLIDE 12: DASHBOARD PREVIEW -->
+    <div class="slide slide-12" data-slide="12">
+        <div class="gradient-mesh">
+            <div class="blob" style="width:380px;height:380px;top:-70px;right:-60px;background:var(--color-accent-1);opacity:0.08;"></div>
+            <div class="blob" style="width:260px;height:260px;bottom:-50px;left:-40px;background:var(--color-accent-2);opacity:0.06;"></div>
+        </div>
+        <canvas class="particle-canvas-ambient" style="position:absolute;inset:0;z-index:1;"></canvas>
+        <div class="content">
+            <p class="phase-badge bg-accent-1/15 text-accent-1 mb-3 reveal">📊 Live Dashboard</p>
+            <h2 class="font-display text-[clamp(1.8rem,4vw,2.6rem)] font-bold mb-6 reveal">Dashboard Modules</h2>
+            <div class="grid grid-cols-4 gap-4">
+                <div class="bg-glass-bg backdrop-blur-xl border border-glass-border rounded-xl p-4 text-center hover:-translate-y-1 transition reveal">
+                    <div class="text-2xl mb-2">💰</div>
+                    <p class="text-accent-1 font-bold text-2xl glow-pulse" data-count="247" data-prefix="$" data-suffix="K">$0K</p>
+                    <p class="text-text-muted text-xs uppercase tracking-wider mt-1">MRR</p>
+                </div>
+                <div class="bg-glass-bg backdrop-blur-xl border border-glass-border rounded-xl p-4 text-center hover:-translate-y-1 transition reveal">
+                    <div class="text-2xl mb-2">📉</div>
+                    <p class="text-accent-3 font-bold text-2xl glow-pulse" data-count="142" data-prefix="$">$0</p>
+                    <p class="text-text-muted text-xs uppercase tracking-wider mt-1">CAC</p>
+                </div>
+                <div class="bg-glass-bg backdrop-blur-xl border border-glass-border rounded-xl p-4 text-center hover:-translate-y-1 transition reveal">
+                    <div class="text-2xl mb-2">🎯</div>
+                    <p class="text-accent-2 font-bold text-2xl glow-pulse" data-count="4" data-suffix=".2x">0x</p>
+                    <p class="text-text-muted text-xs uppercase tracking-wider mt-1">ROAS</p>
+                </div>
+                <div class="bg-glass-bg backdrop-blur-xl border border-glass-border rounded-xl p-4 text-center hover:-translate-y-1 transition reveal">
+                    <div class="text-2xl mb-2">⭐</div>
+                    <p class="text-accent-1 font-bold text-2xl glow-pulse" data-count="62">0</p>
+                    <p class="text-text-muted text-xs uppercase tracking-wider mt-1">NPS</p>
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-4 mt-4">
+                <div class="bg-glass-bg backdrop-blur-xl border border-glass-border rounded-xl p-4 reveal">
+                    <h4 class="font-bold text-sm mb-3">Channel Attribution</h4>
+                    <div class="flex flex-col gap-2">
+                        <div><div class="flex justify-between text-xs mb-1"><span>Google Ads</span><span class="text-accent-1">38%</span></div><div class="bar-track" style="height:18px"><div class="bar-fill bg-accent-1" data-width="38" style="width:0"></div></div></div>
+                        <div><div class="flex justify-between text-xs mb-1"><span>Meta Ads</span><span class="text-accent-2">27%</span></div><div class="bar-track" style="height:18px"><div class="bar-fill bg-accent-2" data-width="27" style="width:0"></div></div></div>
+                        <div><div class="flex justify-between text-xs mb-1"><span>Organic</span><span class="text-accent-3">22%</span></div><div class="bar-track" style="height:18px"><div class="bar-fill bg-accent-3" data-width="22" style="width:0"></div></div></div>
+                        <div><div class="flex justify-between text-xs mb-1"><span>Referral</span><span class="text-text-muted">13%</span></div><div class="bar-track" style="height:18px"><div class="bar-fill bg-text-muted" data-width="13" style="width:0"></div></div></div>
+                    </div>
+                </div>
+                <div class="bg-glass-bg backdrop-blur-xl border border-glass-border rounded-xl p-4 reveal">
+                    <h4 class="font-bold text-sm mb-3">Funnel Conversion</h4>
+                    <div class="flex flex-col gap-2">
+                        <div><div class="flex justify-between text-xs mb-1"><span>Visitors → Leads</span><span class="text-accent-1">8.4%</span></div><div class="bar-track" style="height:18px"><div class="bar-fill bg-accent-1" data-width="84" style="width:0"></div></div></div>
+                        <div><div class="flex justify-between text-xs mb-1"><span>Leads → MQL</span><span class="text-accent-3">32%</span></div><div class="bar-track" style="height:18px"><div class="bar-fill bg-accent-3" data-width="32" style="width:0"></div></div></div>
+                        <div><div class="flex justify-between text-xs mb-1"><span>MQL → SQL</span><span class="text-accent-2">45%</span></div><div class="bar-track" style="height:18px"><div class="bar-fill bg-accent-2" data-width="45" style="width:0"></div></div></div>
+                        <div><div class="flex justify-between text-xs mb-1"><span>SQL → Close</span><span class="text-accent-1">28%</span></div><div class="bar-track" style="height:18px"><div class="bar-fill bg-accent-1" data-width="28" style="width:0"></div></div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 13: ALERT SYSTEM -->
+    <div class="slide slide-13" data-slide="13">
+        <div class="gradient-mesh">
+            <div class="blob" style="width:350px;height:350px;top:-60px;left:-70px;background:var(--color-accent-3);opacity:0.08;"></div>
+            <div class="blob" style="width:250px;height:250px;bottom:-40px;right:-50px;background:var(--color-accent-1);opacity:0.06;"></div>
+        </div>
+        <div class="content">
+            <p class="phase-badge bg-accent-3/15 text-accent-3 mb-3 reveal">🔔 Smart Alerts</p>
+            <h2 class="font-display text-[clamp(1.8rem,4vw,2.6rem)] font-bold mb-5 reveal">Automated Alert System</h2>
+            <p class="text-text-secondary mb-6 reveal">تنبيهات ذكية تتفاعل مع البيانات — مش تقارير بعد الأوان</p>
+            <div class="flex flex-col gap-3">
+                <div class="bg-glass-bg backdrop-blur-xl border border-glass-border rounded-lg p-4 flex items-start gap-3 reveal">
+                    <span class="text-red-400 text-xl">🔴</span>
+                    <div><span class="font-bold text-red-400">Critical</span><p class="text-text-secondary text-sm mt-1">Budget exceeded 90% before mid-month, conversion rate dropped &gt;25% in 24h, site downtime detected</p></div>
+                </div>
+                <div class="bg-glass-bg backdrop-blur-xl border border-glass-border rounded-lg p-4 flex items-start gap-3 reveal">
+                    <span class="text-amber-400 text-xl">🟡</span>
+                    <div><span class="font-bold text-amber-400">Warning</span><p class="text-text-secondary text-sm mt-1">CPA increased &gt;20% WoW, traffic dropped &gt;15%, competitor launched new campaign</p></div>
+                </div>
+                <div class="bg-glass-bg backdrop-blur-xl border border-glass-border rounded-lg p-4 flex items-start gap-3 reveal">
+                    <span class="text-green-400 text-xl">🟢</span>
+                    <div><span class="font-bold text-green-400">Opportunity</span><p class="text-text-secondary text-sm mt-1">New keyword ranking top 3, viral content spike detected, competitor went offline</p></div>
+                </div>
+            </div>
+            <p class="text-text-muted text-xs mt-4 reveal">Alerts delivered via Slack within 2 hours + suggested action for each alert type</p>
+        </div>
+    </div>
+
+    <!-- SLIDE 14: GUARANTEES -->
+    <div class="slide slide-14" data-slide="14">
+        <div class="gradient-mesh">
+            <div class="blob" style="width:380px;height:380px;top:-60px;right:-60px;background:var(--color-accent-1);opacity:0.08;"></div>
+            <div class="blob" style="width:260px;height:260px;bottom:-50px;left:-40px;background:var(--color-accent-2);opacity:0.06;"></div>
+        </div>
+        <div class="content">
+            <p class="phase-badge bg-accent-1/15 text-accent-1 mb-3 reveal">🛡️ SLA</p>
+            <h2 class="font-display text-[clamp(1.8rem,4vw,2.6rem)] font-bold mb-6 reveal">Intelligence SLA Guarantees</h2>
+            <div class="grid grid-cols-2 gap-5">
+                <div class="bg-glass-bg backdrop-blur-xl border border-glass-border rounded-xl p-6 hover:-translate-y-1 transition reveal">
+                    <div class="text-3xl mb-3">⏱️</div>
+                    <h3 class="font-bold text-accent-1 mb-2">2-Hour Alert SLA</h3>
+                    <p class="text-text-secondary text-sm">أي anomaly كبيرة هتوصلك خلال ساعتين مع recommended action</p>
+                </div>
+                <div class="bg-glass-bg backdrop-blur-xl border border-glass-border rounded-xl p-6 hover:-translate-y-1 transition reveal">
+                    <div class="text-3xl mb-3">📊</div>
+                    <h3 class="font-bold text-accent-3 mb-2">99.5% Data Uptime</h3>
+                    <p class="text-text-secondary text-sm">الـ dashboards شغالة 24/7 — لو في issue بنعرفك ونصلحها خلال 4 ساعات</p>
+                </div>
+                <div class="bg-glass-bg backdrop-blur-xl border border-glass-border rounded-xl p-6 hover:-translate-y-1 transition reveal">
+                    <div class="text-3xl mb-3">📝</div>
+                    <h3 class="font-bold text-accent-2 mb-2">Weekly Insight Guarantee</h3>
+                    <p class="text-text-secondary text-sm">تقرير كل إثنين الساعة 10 صباحاً — بدون استثناء</p>
+                </div>
+                <div class="bg-glass-bg backdrop-blur-xl border border-glass-border rounded-xl p-6 hover:-translate-y-1 transition reveal">
+                    <div class="text-3xl mb-3">🎯</div>
+                    <h3 class="font-bold text-accent-1 mb-2">Milestone-Linked</h3>
+                    <p class="text-text-secondary text-sm">كل milestone لازم يتحقق data-verified — مش بالكلام</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 15: CLOSING -->
+    <div class="slide slide-15" data-slide="15">
+        <div class="gradient-mesh">
+            <div class="blob" style="width:500px;height:500px;top:-100px;right:-100px;background:var(--color-accent-1);opacity:0.15;"></div>
+            <div class="blob" style="width:350px;height:350px;bottom:-80px;left:-60px;background:var(--color-accent-2);opacity:0.12;"></div>
+            <div class="blob" style="width:250px;height:250px;top:40%;left:20%;background:var(--color-accent-3);opacity:0.10;"></div>
+        </div>
+        <canvas class="particle-canvas" style="position:absolute;inset:0;z-index:1;"></canvas>
+        <div class="content text-center">
+            <div class="text-[100px] mb-4 animate-[float_3s_ease-in-out_infinite]">🚀</div>
+            <h2 class="font-display text-[clamp(2.5rem,6vw,4.5rem)] font-black bg-linear-to-br from-accent-1 via-accent-3 to-accent-2 bg-clip-text text-transparent tracking-tight mb-4 reveal">Data Drives Growth</h2>
+            <p class="text-[clamp(0.9rem,1.5vw,1.3rem)] font-light text-text-muted tracking-[4px] uppercase mb-8 reveal">Every decision backed by intelligence</p>
+            <div class="bg-glass-bg backdrop-blur-xl border border-accent-1/20 rounded-2xl p-6 inline-block reveal">
+                <p class="text-accent-1 font-bold text-lg mb-1">Ready to activate your Growth Intelligence Layer?</p>
+                <p class="text-text-muted text-sm">hunters@growth.com — Schedule your Discovery Call</p>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- NAVIGATION -->
+<div class="nav-controls">
+    <button class="nav-btn" onclick="changeSlide(-1)">&#8249;</button>
+    <div class="slide-dots" id="dots"></div>
+    <button class="nav-btn" onclick="changeSlide(1)">&#8250;</button>
+    <span class="slide-counter" id="counter">1 / 15</span>
+</div>
+
+<script>
+    let current = 1;
+    const total = document.querySelectorAll('.slide').length;
+    const dotsContainer = document.getElementById('dots');
+    const counter = document.getElementById('counter');
+    for (let i = 1; i <= total; i++) { const dot = document.createElement('div'); dot.className = 'dot' + (i === 1 ? ' active' : ''); dot.onclick = () => goToSlide(i); dotsContainer.appendChild(dot); }
+    function goToSlide(n) {
+        const prev = document.querySelector('.slide.active');
+        const next = document.querySelector(`.slide[data-slide="${n}"]`);
+        if (prev) prev.classList.remove('active');
+        if (next) { next.classList.add('active'); try { animateSlide(next); } catch(e) { console.warn('Motion unavailable:', e); } }
+        current = n; updateNav();
+    }
+    function changeSlide(dir) { let next = current + dir; if (next < 1) next = total; if (next > total) next = 1; goToSlide(next); }
+    function updateNav() { document.querySelectorAll('.dot').forEach((d, i) => { d.classList.toggle('active', i + 1 === current); }); counter.textContent = current + ' / ' + total; }
+    document.addEventListener('keydown', (e) => { if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); changeSlide(1); } if (e.key === 'ArrowLeft') { e.preventDefault(); changeSlide(-1); } });
+    let touchStartX = 0;
+    document.addEventListener('touchstart', (e) => { touchStartX = e.touches[0].clientX; });
+    document.addEventListener('touchend', (e) => { const diff = touchStartX - e.changedTouches[0].clientX; if (Math.abs(diff) > 50) changeSlide(diff > 0 ? 1 : -1); });
+
+    function animateSlide(slide) {
+        slide.querySelectorAll('.reveal').forEach((el, i) => {
+            el.style.opacity = '0'; el.style.transform = 'translateY(20px)';
+            Motion.animate(el, { opacity: 1, transform: 'translateY(0px)' }, { type: 'spring', stiffness: 200, damping: 30, delay: i * 0.12 });
+        });
+        animateSlideEffects(slide);
+    }
+
+    function animateSlideEffects(slide) {
+        slide.querySelectorAll('[data-count]:not(.counted)').forEach(el => {
+            el.classList.add('counted');
+            const target = parseInt(el.dataset.count); const suffix = el.dataset.suffix || '', prefix = el.dataset.prefix || '';
+            let cur = 0; const step = target / 40;
+            const timer = setInterval(() => { cur += step; if (cur >= target) { cur = target; clearInterval(timer); } el.textContent = prefix + Math.round(cur).toLocaleString() + suffix; }, 30);
+        });
+        slide.querySelectorAll('.bar-fill:not(.fill-init)').forEach((bar, i) => {
+            bar.classList.add('fill-init');
+            Motion.animate(bar, { width: bar.dataset.width + '%' }, { type: 'spring', stiffness: 100, damping: 20, delay: i * 0.1 });
+        });
+    }
+
+    document.addEventListener('mousemove', (e) => {
+        const spotlight = document.querySelector('.mouse-spotlight');
+        if (spotlight) { const rgb = getComputedStyle(document.documentElement).getPropertyValue('--glow-color-rgb').trim() || '0,212,170'; spotlight.style.background = `radial-gradient(600px circle at ${e.clientX}px ${e.clientY}px, rgba(${rgb}, 0.06), transparent 40%)`; }
+    });
+
+    (function() {
+        let mouseX = window.innerWidth / 2, mouseY = window.innerHeight / 2;
+        const cx = window.innerWidth / 2, cy = window.innerHeight / 2;
+        document.addEventListener('mousemove', (e) => { mouseX = e.clientX; mouseY = e.clientY; });
+        (function tick() { const ox = (mouseX - cx) / cx, oy = (mouseY - cy) / cy; document.querySelectorAll('.deco-shape').forEach(shape => { const speed = parseFloat(shape.dataset.speed) || 0.03; shape.style.transform = `translate(${ox * speed * 100}px, ${oy * speed * 100}px)`; }); requestAnimationFrame(tick); })();
+    })();
+
+    window.initParticles = function(canvas, options) {
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d'); canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight;
+        const interactive = options.interactive !== false; const count = options.count || (interactive ? 55 : 18);
+        let mx = -1000, my = -1000;
+        const rgb = getComputedStyle(document.documentElement).getPropertyValue('--glow-color-rgb').trim() || '0,212,170';
+        const [r, g, b] = rgb.split(',').map(Number);
+        const particles = Array.from({ length: count }, () => ({ x: Math.random() * canvas.width, y: Math.random() * canvas.height, vx: (Math.random() - 0.5) * 0.3, vy: (Math.random() - 0.5) * 0.3, size: Math.random() * 2.5 + 0.8, alpha: Math.random() * 0.35 + 0.1 }));
+        if (interactive) { canvas.addEventListener('mousemove', (e) => { const rect = canvas.getBoundingClientRect(); mx = e.clientX - rect.left; my = e.clientY - rect.top; }); canvas.addEventListener('mouseleave', () => { mx = -1000; my = -1000; }); }
+        (function animate() { ctx.clearRect(0, 0, canvas.width, canvas.height); particles.forEach(p => { if (interactive) { const dx = p.x - mx, dy = p.y - my, dist = Math.sqrt(dx * dx + dy * dy); if (dist < 120) { const force = (120 - dist) / 120 * 2; p.vx += (dx / dist) * force * 0.1; p.vy += (dy / dist) * force * 0.1; } } p.vx *= 0.98; p.vy *= 0.98; p.x += p.vx; p.y += p.vy; if (p.x < 0) p.x = canvas.width; if (p.x > canvas.width) p.x = 0; if (p.y < 0) p.y = canvas.height; if (p.y > canvas.height) p.y = 0; ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fillStyle = `rgba(${r},${g},${b},${p.alpha})`; ctx.fill(); }); requestAnimationFrame(animate); })();
+    };
+    document.querySelectorAll('.particle-canvas').forEach(c => window.initParticles(c, { interactive: true, count: 55 }));
+    document.querySelectorAll('.particle-canvas-ambient').forEach(c => window.initParticles(c, { interactive: false, count: 18 }));
+    animateSlide(document.querySelector('.slide.active'));
+</script>
+
+</body>
+</html>
